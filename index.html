@@ -5881,6 +5881,7 @@
 
       <!-- PANE 1: JOIN ROOM -->
       <div id="gatewayJoinPane">
+        <div id="gatewayJoinAlert" style="display: none; margin-bottom: 12px; padding: 10px 12px; border-radius: 8px; font-size: 0.82rem; line-height: 1.4;"></div>
         <div style="margin-bottom: 14px;">
           <label style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; font-weight: 700; color: #e2e8f0; display: block; margin-bottom: 6px;">ENTER ROOM CODE:</label>
           <input type="text" id="gatewayJoinCodeInput" class="glass-input" placeholder="e.g. PARTY-1, UNO-BRAWL, FRIDAY" style="width: 100%; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 800; text-transform: uppercase; text-align: center; letter-spacing: 0.1em; background: rgba(10, 14, 20, 0.9) !important; color: #ffd166 !important; border: 2px solid var(--theme-border, #d8a86a) !important; border-radius: 8px;" />
@@ -5893,6 +5894,7 @@
 
       <!-- PANE 2: CREATE ROOM -->
       <div id="gatewayCreatePane" style="display: none;">
+        <div id="gatewayCreateAlert" style="display: none; margin-bottom: 12px; padding: 10px 12px; border-radius: 8px; font-size: 0.82rem; line-height: 1.4;"></div>
         <div style="margin-bottom: 10px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
             <label style="font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; font-weight: 700; color: #e2e8f0;">NEW ROOM CODE / NAME:</label>
@@ -5949,6 +5951,7 @@
         <div id="syncAutoDeleteInfo" style="font-size: 0.72rem; color: #94a3b8; margin-top: 5px; font-family: 'JetBrains Mono', monospace;">⏳ Auto-deletes after 30m inactivity or upon completion</div>
       </div>
       <div style="margin-bottom: 12px;">
+        <div id="roomSyncAlert" style="display: none; margin-bottom: 10px; padding: 10px 12px; border-radius: 8px; font-size: 0.82rem; line-height: 1.4;"></div>
         <label style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; font-weight: 700; display: block; margin-bottom: 4px;">SWITCH TO ANOTHER ROOM:</label>
         <input type="text" id="roomCodeInput" class="glass-input" style="width: 100%; padding: 10px; font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 800; text-transform: uppercase; text-align: center; background: rgba(10, 14, 20, 0.85) !important; color: #fffef8 !important; border: 2px solid var(--theme-border, #d8a86a) !important; border-radius: 6px;" />
       </div>
@@ -12334,15 +12337,60 @@
       const topRoomBtn = document.getElementById("topRoomBtn");
       if (topRoomBtn) topRoomBtn.onclick = openRoomInfoModal;
 
-      document.getElementById("joinRoomBtn").onclick = () => {
+      document.getElementById("joinRoomBtn").onclick = async () => {
         const rawCode = document.getElementById("roomCodeInput").value.toUpperCase().trim();
         const cleanCode = rawCode.replace(/[^A-Z0-9_-]/g, "");
-        if (cleanCode && cleanCode !== roomCode) {
-          const targetUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(cleanCode)}`;
-          window.location.href = targetUrl;
+        if (!cleanCode) {
+          showToast("⚠️ Please enter a room code!");
           return;
         }
-        document.getElementById("roomSyncModal").classList.remove("open");
+        if (cleanCode === roomCode) {
+          document.getElementById("roomSyncModal").classList.remove("open");
+          return;
+        }
+
+        const joinBtn = document.getElementById("joinRoomBtn");
+        const syncAlert = document.getElementById("roomSyncAlert");
+        if (joinBtn) {
+          joinBtn.disabled = true;
+          joinBtn.innerHTML = "<span>⏳ Checking room...</span>";
+        }
+        if (syncAlert) syncAlert.style.display = "none";
+
+        try {
+          const check = await verifyRoomExists(cleanCode, 2200);
+          if (!check.exists) {
+            if (joinBtn) {
+              joinBtn.disabled = false;
+              joinBtn.innerHTML = "<span>Switch to Entered Room</span>";
+            }
+            playBuzzer();
+            if (syncAlert) {
+              syncAlert.style.display = "block";
+              syncAlert.style.background = "rgba(239, 68, 68, 0.2)";
+              syncAlert.style.border = "1.5px solid #ef4444";
+              syncAlert.style.color = "#fca5a5";
+              if (check.reason === "expired") {
+                syncAlert.innerHTML = `⏳ Room <strong>"${cleanCode}"</strong> has expired after 30 mins of inactivity.`;
+              } else if (check.reason === "deleted") {
+                syncAlert.innerHTML = `🗑️ Room <strong>"${cleanCode}"</strong> was deleted and closed.`;
+              } else {
+                syncAlert.innerHTML = `❌ Room <strong>"${cleanCode}"</strong> does not exist! Please check the code.`;
+              }
+            }
+            return;
+          }
+
+          // Room exists! Switch to it
+          const targetUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(cleanCode)}`;
+          window.location.href = targetUrl;
+        } catch (e) {
+          if (joinBtn) {
+            joinBtn.disabled = false;
+            joinBtn.innerHTML = "<span>Switch to Entered Room</span>";
+          }
+          showToast("⚠️ Failed to verify room.");
+        }
       };
 
       document.getElementById("copyRoomLinkBtn").onclick = () => {
@@ -12375,7 +12423,89 @@
       };
 
       // --- TAVERN ROOM GATEWAY CONTROLLER ---
-      function openRoomGatewayModal() {
+      function showJoinAlert(msg, type = "error") {
+        const el = document.getElementById("gatewayJoinAlert");
+        if (!el) return;
+        el.style.display = "block";
+        el.innerHTML = msg;
+        if (type === "error") {
+          el.style.background = "rgba(239, 68, 68, 0.2)";
+          el.style.border = "1.5px solid #ef4444";
+          el.style.color = "#fca5a5";
+        } else if (type === "warn") {
+          el.style.background = "rgba(234, 179, 8, 0.2)";
+          el.style.border = "1.5px solid #facc15";
+          el.style.color = "#fef08a";
+        } else {
+          el.style.background = "rgba(34, 197, 94, 0.2)";
+          el.style.border = "1.5px solid #4ade80";
+          el.style.color = "#86efac";
+        }
+      }
+
+      function hideJoinAlert() {
+        const el = document.getElementById("gatewayJoinAlert");
+        if (el) el.style.display = "none";
+      }
+
+      function showCreateAlert(msg, type = "warn") {
+        const el = document.getElementById("gatewayCreateAlert");
+        if (!el) return;
+        el.style.display = "block";
+        el.innerHTML = msg;
+        if (type === "error") {
+          el.style.background = "rgba(239, 68, 68, 0.2)";
+          el.style.border = "1.5px solid #ef4444";
+          el.style.color = "#fca5a5";
+        } else if (type === "warn") {
+          el.style.background = "rgba(234, 179, 8, 0.2)";
+          el.style.border = "1.5px solid #facc15";
+          el.style.color = "#fef08a";
+        } else {
+          el.style.background = "rgba(34, 197, 94, 0.2)";
+          el.style.border = "1.5px solid #4ade80";
+          el.style.color = "#86efac";
+        }
+      }
+
+      function hideCreateAlert() {
+        const el = document.getElementById("gatewayCreateAlert");
+        if (el) el.style.display = "none";
+      }
+
+      function switchToCreatePaneWithCode(code) {
+        if (tabCreateBtn && tabJoinBtn && paneCreate && paneJoin) {
+          tabCreateBtn.classList.add("active");
+          tabJoinBtn.classList.remove("active");
+          paneCreate.style.display = "block";
+          paneJoin.style.display = "none";
+          hideJoinAlert();
+          hideCreateAlert();
+          const inp = document.getElementById("gatewayCreateCodeInput");
+          if (inp) {
+            inp.value = code;
+            inp.focus();
+          }
+        }
+      }
+
+      function switchToJoinPaneWithCode(code) {
+        if (tabJoinBtn && tabCreateBtn && paneJoin && paneCreate) {
+          tabJoinBtn.classList.add("active");
+          tabCreateBtn.classList.remove("active");
+          paneJoin.style.display = "block";
+          paneCreate.style.display = "none";
+          hideJoinAlert();
+          hideCreateAlert();
+          const inp = document.getElementById("gatewayJoinCodeInput");
+          if (inp) {
+            inp.value = code;
+            inp.focus();
+          }
+        }
+      }
+
+      function openRoomGatewayModal(alertMsg = "", alertType = "warn") {
         const modal = document.getElementById("roomGatewayModal");
         if (!modal) return;
         const joinInp = document.getElementById("gatewayJoinCodeInput");
@@ -12384,7 +12514,132 @@
         if (createInp && !createInp.value) {
           createInp.value = "CRAWL-" + Math.floor(10 + Math.random() * 90);
         }
+        if (alertMsg) {
+          showJoinAlert(alertMsg, alertType);
+        } else {
+          hideJoinAlert();
+          hideCreateAlert();
+        }
         modal.classList.add("open");
+      }
+
+      // Check whether a room code exists and is active on the broker
+      function verifyRoomExists(targetCode, timeoutMs = 1800) {
+        return new Promise((resolve) => {
+          const cleanCode = (targetCode || "").toUpperCase().trim().replace(/[^A-Z0-9_-]/g, "");
+          if (!cleanCode) {
+            return resolve({ exists: false, reason: "empty" });
+          }
+
+          let resolved = false;
+          let timer = null;
+
+          function done(result) {
+            if (resolved) return;
+            resolved = true;
+            if (timer) clearTimeout(timer);
+            resolve(result);
+          }
+
+          timer = setTimeout(() => {
+            done({ exists: false, reason: "not_found" });
+          }, timeoutMs);
+
+          // If main mqttClient is connected, reuse it to probe topic
+          if (mqttClient && mqttClient.isConnected()) {
+            const checkTopic = `leeprky/drunkuno/rooms/${cleanCode}/state`;
+            const prevHandler = mqttClient.onMessageArrived;
+
+            const tempHandler = (message) => {
+              if (message.destinationName === checkTopic) {
+                try { mqttClient.unsubscribe(checkTopic); } catch (e) {}
+                mqttClient.onMessageArrived = prevHandler;
+                const payloadStr = (message.payloadString || "").trim();
+                if (!payloadStr || payloadStr === "null") {
+                  return done({ exists: false, reason: "deleted" });
+                }
+                try {
+                  const data = JSON.parse(payloadStr);
+                  if (data && Array.isArray(data.teams) && data.teams.length === 4) {
+                    const now = Date.now();
+                    const isInactive = data.updatedAt && (now - data.updatedAt > INACTIVITY_TIMEOUT_MS);
+                    const isCompleted = data.gameEnded && data.endedAt && (now - data.endedAt > COMPLETION_AUTODELETE_MS);
+                    if (isInactive || isCompleted) {
+                      return done({ exists: false, reason: "expired", state: data });
+                    }
+                    return done({ exists: true, state: data });
+                  }
+                } catch (e) {}
+                return done({ exists: false, reason: "invalid" });
+              }
+              if (prevHandler) prevHandler(message);
+            };
+
+            mqttClient.onMessageArrived = tempHandler;
+            try {
+              mqttClient.subscribe(checkTopic);
+            } catch (e) {
+              mqttClient.onMessageArrived = prevHandler;
+              done({ exists: false, reason: "error" });
+            }
+            return;
+          }
+
+          // Otherwise, spin up a lightweight temporary probe client
+          const probeId = "probe_" + Math.random().toString(16).substr(2, 8);
+          let probe;
+          try {
+            probe = new Paho.MQTT.Client("broker.hivemq.com", 8884, probeId);
+          } catch (e) {
+            return done({ exists: false, reason: "error" });
+          }
+
+          const cleanupProbe = () => {
+            if (probe) {
+              try { probe.onMessageArrived = () => {}; } catch (e) {}
+              try { probe.disconnect(); } catch (e) {}
+            }
+          };
+
+          probe.onMessageArrived = (message) => {
+            cleanupProbe();
+            const payloadStr = (message.payloadString || "").trim();
+            if (!payloadStr || payloadStr === "null") {
+              return done({ exists: false, reason: "deleted" });
+            }
+            try {
+              const data = JSON.parse(payloadStr);
+              if (data && Array.isArray(data.teams) && data.teams.length === 4) {
+                const now = Date.now();
+                const isInactive = data.updatedAt && (now - data.updatedAt > INACTIVITY_TIMEOUT_MS);
+                const isCompleted = data.gameEnded && data.endedAt && (now - data.endedAt > COMPLETION_AUTODELETE_MS);
+                if (isInactive || isCompleted) {
+                  return done({ exists: false, reason: "expired", state: data });
+                }
+                return done({ exists: true, state: data });
+              }
+            } catch (e) {}
+            return done({ exists: false, reason: "invalid" });
+          };
+
+          probe.connect({
+            useSSL: true,
+            timeout: 3,
+            cleanSession: true,
+            onSuccess: () => {
+              try {
+                probe.subscribe(`leeprky/drunkuno/rooms/${cleanCode}/state`);
+              } catch (e) {
+                cleanupProbe();
+                done({ exists: false, reason: "error" });
+              }
+            },
+            onFailure: () => {
+              cleanupProbe();
+              done({ exists: false, reason: "connection_failed" });
+            }
+          });
+        });
       }
 
       // Gateway tab toggle
@@ -12399,6 +12654,8 @@
           tabCreateBtn.classList.remove("active");
           paneJoin.style.display = "block";
           paneCreate.style.display = "none";
+          hideJoinAlert();
+          hideCreateAlert();
           playTick(400);
         };
         tabCreateBtn.onclick = () => {
@@ -12406,6 +12663,8 @@
           tabJoinBtn.classList.remove("active");
           paneCreate.style.display = "block";
           paneJoin.style.display = "none";
+          hideJoinAlert();
+          hideCreateAlert();
           playTick(400);
         };
       }
@@ -12439,118 +12698,205 @@
           const n = Math.floor(10 + Math.random() * 90);
           const inp = document.getElementById("gatewayCreateCodeInput");
           if (inp) inp.value = `${w}-${n}`;
+          hideCreateAlert();
           playTick(600);
         };
       }
 
-      // Submit JOIN ROOM
+      // Submit JOIN ROOM (with Real-Time Existence Verification)
       const gatewayJoinSubmit = document.getElementById("gatewayJoinSubmitBtn");
       if (gatewayJoinSubmit) {
-        gatewayJoinSubmit.onclick = () => {
+        gatewayJoinSubmit.onclick = async () => {
           const inp = document.getElementById("gatewayJoinCodeInput");
           const codeVal = (inp?.value || "").toUpperCase().trim().replace(/[^A-Z0-9_-]/g, "");
           if (!codeVal) {
-            showToast("⚠️ Please enter a room code!");
+            showJoinAlert("⚠️ Please enter a room code!", "warn");
             playTick(200);
+            if (inp) inp.focus();
             return;
           }
-          roomCode = codeVal;
-          state.roomCode = roomCode;
+
+          // Visual loading state
+          gatewayJoinSubmit.disabled = true;
+          gatewayJoinSubmit.innerHTML = '<span>⏳ CHECKING ROOM...</span>';
+          gatewayJoinSubmit.style.opacity = "0.75";
+          hideJoinAlert();
+
           try {
-            localStorage.setItem("drunk_uno_room_code", roomCode);
-            window.history.replaceState(null, "", `?room=${encodeURIComponent(roomCode)}`);
-          } catch(e) {}
+            const check = await verifyRoomExists(codeVal, 2000);
+            if (!check.exists) {
+              gatewayJoinSubmit.disabled = false;
+              gatewayJoinSubmit.innerHTML = '<span>ENTER ROOM ➡️</span>';
+              gatewayJoinSubmit.style.opacity = "1";
+              playBuzzer();
+              if (inp) {
+                inp.style.borderColor = "#ef4444";
+                setTimeout(() => { inp.style.borderColor = "var(--theme-border, #d8a86a)"; }, 3000);
+              }
 
-          loadGameState();
-          initMqttSync();
-          updateTopRoomBadge();
+              if (check.reason === "expired") {
+                showJoinAlert(`⏳ Room <strong>"${codeVal}"</strong> has expired due to 30 minutes of inactivity or game completion. <a href="#" id="createExpiredRoomLink" style="color: #ffd166; font-weight: 800; text-decoration: underline; margin-left: 6px;">Create this room now?</a>`, "error");
+              } else if (check.reason === "deleted") {
+                showJoinAlert(`🗑️ Room <strong>"${codeVal}"</strong> was closed and deleted by the host. <a href="#" id="createExpiredRoomLink" style="color: #ffd166; font-weight: 800; text-decoration: underline; margin-left: 6px;">Create this room now?</a>`, "error");
+              } else if (check.reason === "connection_failed") {
+                showJoinAlert(`⚠️ Network error: Could not reach room server. Please check your internet connection.`, "error");
+              } else {
+                showJoinAlert(`❌ Room <strong>"${codeVal}"</strong> does not exist! Please check the code with your host or <a href="#" id="createNotFoundRoomLink" style="color: #ffd166; font-weight: 800; text-decoration: underline; margin-left: 6px;">create it here</a>.`, "error");
+              }
 
-          const modal = document.getElementById("roomGatewayModal");
-          if (modal) modal.classList.remove("open");
+              const createLink = document.getElementById("createExpiredRoomLink") || document.getElementById("createNotFoundRoomLink");
+              if (createLink) {
+                createLink.onclick = (e) => {
+                  e.preventDefault();
+                  switchToCreatePaneWithCode(codeVal);
+                };
+              }
+              return;
+            }
 
-          document.documentElement.classList.remove("dashboard-gated");
-          document.body.classList.remove("dashboard-gated");
-          const appContainer = document.querySelector(".app-container");
-          if (appContainer) appContainer.classList.add("revealed");
+            // Room exists! Proceed to join
+            gatewayJoinSubmit.innerHTML = '<span>✅ ROOM FOUND! JOINING...</span>';
+            roomCode = codeVal;
+            state.roomCode = roomCode;
+            try {
+              localStorage.setItem("drunk_uno_room_code", roomCode);
+              window.history.replaceState(null, "", `?room=${encodeURIComponent(roomCode)}`);
+            } catch(e) {}
 
-          const isRegistered = (localStorage.getItem("drunk_uno_player_registered") === "true") && !!(localStorage.getItem("drunk_uno_player_name"));
-          if (!isRegistered && state.playMode !== "single") {
-            setTimeout(() => { openCrewSetupModal(false); }, 300);
-          } else {
-            showToast(`🏰 Connected to Room: ${roomCode}!`);
-            playFanfare("win");
+            loadGameState();
+            if (check.state) {
+              applyIncomingState(check.state);
+            }
+            initMqttSync();
+            updateTopRoomBadge();
+
+            const modal = document.getElementById("roomGatewayModal");
+            if (modal) modal.classList.remove("open");
+
+            document.documentElement.classList.remove("dashboard-gated");
+            document.body.classList.remove("dashboard-gated");
+            const appContainer = document.querySelector(".app-container");
+            if (appContainer) appContainer.classList.add("revealed");
+
+            const isRegistered = (localStorage.getItem("drunk_uno_player_registered") === "true") && !!(localStorage.getItem("drunk_uno_player_name"));
+            if (!isRegistered && state.playMode !== "single") {
+              setTimeout(() => { openCrewSetupModal(false); }, 300);
+            } else {
+              showToast(`🏰 Connected to Room: ${roomCode}!`);
+              playFanfare("win");
+            }
+          } catch (err) {
+            console.error("Join room check error:", err);
+            gatewayJoinSubmit.disabled = false;
+            gatewayJoinSubmit.innerHTML = '<span>ENTER ROOM ➡️</span>';
+            gatewayJoinSubmit.style.opacity = "1";
+            showJoinAlert("⚠️ An unexpected error occurred while verifying room code.", "error");
           }
         };
       }
 
-      // Submit CREATE ROOM
+      // Submit CREATE ROOM (with Conflict Verification)
       const gatewayCreateSubmit = document.getElementById("gatewayCreateSubmitBtn");
       if (gatewayCreateSubmit) {
-        gatewayCreateSubmit.onclick = () => {
+        gatewayCreateSubmit.onclick = async () => {
           const inp = document.getElementById("gatewayCreateCodeInput");
           let codeVal = (inp?.value || "").toUpperCase().trim().replace(/[^A-Z0-9_-]/g, "");
           if (!codeVal) {
             codeVal = "CRAWL-" + Math.floor(10 + Math.random() * 90);
           }
-          const passInp = document.getElementById("gatewayAdminPasscodeInput");
-          const adminPass = (passInp?.value || "").trim() || ADMIN_PASSCODE;
-          const chosenMode = document.querySelector('input[name="gatewayPlayMode"]:checked')?.value || "party";
 
-          roomCode = codeVal;
-          state.roomCode = roomCode;
-          state.adminPasscode = adminPass;
-          state.playMode = chosenMode;
-          state.gameStarted = true;
-          state.version = 1;
-          state.updatedAt = Date.now();
-          state.updatedBy = "Room Creator";
-          state.resetEpoch = Date.now();
-          state.teams = JSON.parse(JSON.stringify(DEFAULT_TEAMS));
-          state.stops = JSON.parse(JSON.stringify(DEFAULT_STOPS));
-          state.bingoCards = JSON.parse(JSON.stringify(BINGO_CARDS));
-          state.devices = {};
-          state.logs = [`Room ${roomCode} created in ${chosenMode === "single" ? "Single Phone Console" : "Live Party"} Mode.`];
+          // Check if this room code is ALREADY active on the broker
+          gatewayCreateSubmit.disabled = true;
+          gatewayCreateSubmit.innerHTML = '<span>⏳ CHECKING CODE AVAILABILITY...</span>';
+          gatewayCreateSubmit.style.opacity = "0.75";
+          hideCreateAlert();
 
-          // Grant Admin to creator device
-          state.adminUnlocked = true;
           try {
-            sessionStorage.setItem("drunk_uno_admin_unlocked", "true");
-            sessionStorage.setItem("drunk_uno_admin_unlocked_" + roomCode, "true");
-            localStorage.setItem("drunk_uno_admin_unlocked_" + roomCode, "true");
-            localStorage.setItem("drunk_uno_room_code", roomCode);
-            window.history.replaceState(null, "", `?room=${encodeURIComponent(roomCode)}`);
-          } catch(e) {}
+            const check = await verifyRoomExists(codeVal, 1600);
+            if (check.exists) {
+              gatewayCreateSubmit.disabled = false;
+              gatewayCreateSubmit.innerHTML = '<span>⚔️ CREATE & LAUNCH ROOM 🎉</span>';
+              gatewayCreateSubmit.style.opacity = "1";
+              playBuzzer();
+              showCreateAlert(`⚠️ Room <strong>"${codeVal}"</strong> already exists and is active! <a href="#" id="joinExistingRoomLink" style="color: #4ade80; font-weight: 800; text-decoration: underline; margin-left: 6px;">Join this room instead</a> or pick a different code.`, "warn");
 
-          saveGameState(true);
-          initMqttSync();
-          updateTopRoomBadge();
+              const joinLink = document.getElementById("joinExistingRoomLink");
+              if (joinLink) {
+                joinLink.onclick = (e) => {
+                  e.preventDefault();
+                  switchToJoinPaneWithCode(codeVal);
+                };
+              }
+              return;
+            }
 
-          const modal = document.getElementById("roomGatewayModal");
-          if (modal) modal.classList.remove("open");
+            // Room code is free! Proceed to create
+            const passInp = document.getElementById("gatewayAdminPasscodeInput");
+            const adminPass = (passInp?.value || "").trim() || ADMIN_PASSCODE;
+            const chosenMode = document.querySelector('input[name="gatewayPlayMode"]:checked')?.value || "party";
 
-          document.documentElement.classList.remove("dashboard-gated");
-          document.body.classList.remove("dashboard-gated");
-          const appContainer = document.querySelector(".app-container");
-          if (appContainer) appContainer.classList.add("revealed");
+            roomCode = codeVal;
+            state.roomCode = roomCode;
+            state.adminPasscode = adminPass;
+            state.playMode = chosenMode;
+            state.gameStarted = true;
+            state.version = 1;
+            state.updatedAt = Date.now();
+            state.updatedBy = "Room Creator";
+            state.resetEpoch = Date.now();
+            state.teams = JSON.parse(JSON.stringify(DEFAULT_TEAMS));
+            state.stops = JSON.parse(JSON.stringify(DEFAULT_STOPS));
+            state.bingoCards = JSON.parse(JSON.stringify(BINGO_CARDS));
+            state.devices = {};
+            state.logs = [`Room ${roomCode} created in ${chosenMode === "single" ? "Single Phone Console" : "Live Party"} Mode.`];
 
-          if (chosenMode === "single") {
-            state.myPlayerName = "Crawl Master";
-            state.myTeamIdx = 0;
+            // Grant Admin to creator device
+            state.adminUnlocked = true;
             try {
-              localStorage.setItem("drunk_uno_player_name", "Crawl Master");
-              localStorage.setItem("drunk_uno_player_registered", "true");
-              localStorage.setItem("drunk_uno_crew_setup", "true");
-              localStorage.setItem("drunk_uno_team_idx", "0");
+              sessionStorage.setItem("drunk_uno_admin_unlocked", "true");
+              sessionStorage.setItem("drunk_uno_admin_unlocked_" + roomCode, "true");
+              localStorage.setItem("drunk_uno_admin_unlocked_" + roomCode, "true");
+              localStorage.setItem("drunk_uno_room_code", roomCode);
+              window.history.replaceState(null, "", `?room=${encodeURIComponent(roomCode)}`);
             } catch(e) {}
-            syncMyDevice("Crawl Master", 0, true);
-            renderScoringTab();
-            renderCrewBar();
-            showToast(`⚔️ Room ${roomCode} created! Single Phone Mode active.`);
-            playFanfare("win");
-          } else {
-            setTimeout(() => { openCrewSetupModal(false); }, 300);
-            showToast(`⚔️ Room ${roomCode} created! Choose your crew.`);
-            playFanfare("win");
+
+            saveGameState(true);
+            initMqttSync();
+            updateTopRoomBadge();
+
+            const modal = document.getElementById("roomGatewayModal");
+            if (modal) modal.classList.remove("open");
+
+            document.documentElement.classList.remove("dashboard-gated");
+            document.body.classList.remove("dashboard-gated");
+            const appContainer = document.querySelector(".app-container");
+            if (appContainer) appContainer.classList.add("revealed");
+
+            if (chosenMode === "single") {
+              state.myPlayerName = "Crawl Master";
+              state.myTeamIdx = 0;
+              try {
+                localStorage.setItem("drunk_uno_player_name", "Crawl Master");
+                localStorage.setItem("drunk_uno_player_registered", "true");
+                localStorage.setItem("drunk_uno_crew_setup", "true");
+                localStorage.setItem("drunk_uno_team_idx", "0");
+              } catch(e) {}
+              syncMyDevice("Crawl Master", 0, true);
+              renderScoringTab();
+              renderCrewBar();
+              showToast(`⚔️ Room ${roomCode} created! Single Phone Mode active.`);
+              playFanfare("win");
+            } else {
+              setTimeout(() => { openCrewSetupModal(false); }, 300);
+              showToast(`⚔️ Room ${roomCode} created! Choose your crew.`);
+              playFanfare("win");
+            }
+          } catch (err) {
+            console.error("Create room check error:", err);
+            gatewayCreateSubmit.disabled = false;
+            gatewayCreateSubmit.innerHTML = '<span>⚔️ CREATE & LAUNCH ROOM 🎉</span>';
+            gatewayCreateSubmit.style.opacity = "1";
+            showCreateAlert("⚠️ An unexpected error occurred while checking code availability.", "error");
           }
         };
       }
@@ -13547,6 +13893,23 @@
           openRoomGatewayModal();
           return;
         }
+
+        const isLocallyActiveSession = state && state.updatedBy === "Room Creator" && state.adminUnlocked;
+        if (!hasReceivedBrokerState && !isLocallyActiveSession) {
+          const invalidRoom = roomCode;
+          roomCode = "";
+          state.roomCode = "";
+          try {
+            localStorage.removeItem("drunk_uno_room_code");
+            window.history.replaceState(null, "", window.location.pathname);
+          } catch (e) {}
+          openRoomGatewayModal();
+          showJoinAlert(`⚠️ Room <strong>"${invalidRoom}"</strong> was not found or has expired. Please check the code with your host or create a new room below.`, "warn");
+          const inp = document.getElementById("gatewayJoinCodeInput");
+          if (inp) inp.value = invalidRoom;
+          return;
+        }
+
         const isRegisteredNow = (localStorage.getItem("drunk_uno_player_registered") === "true") && !!(localStorage.getItem("drunk_uno_player_name"));
         if (!isRegisteredNow && state.playMode !== "single") {
           // Welcome modal is already open and ready behind the splash
