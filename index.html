@@ -9913,6 +9913,7 @@
 
       function renderStops() {
         const grid = document.getElementById("stopsGrid");
+        if (!grid) return;
         grid.innerHTML = "";
 
         const currentStop = state.stops[state.currentStopIdx] || state.stops[0];
@@ -13533,14 +13534,14 @@
 
         const phrases = [
           { time: 0, text: "🎴 SHUFFLING THE UNO DECK..." },
-          { time: 825, text: "⚡ SYNCING MULTI-PHONE PARTY ENGINE..." },
-          { time: 1650, text: "📡 CONNECTING PHONE TAVERN NETWORK..." },
-          { time: 2475, text: "⚔️ PREPARING THE UNO BATTLE..." },
-          { time: 3225, text: "🚀 WELCOME TO DRUNK UNO!" }
+          { time: 350, text: "⚡ SYNCING MULTI-PHONE PARTY ENGINE..." },
+          { time: 700, text: "📡 CONNECTING PHONE TAVERN NETWORK..." },
+          { time: 1050, text: "⚔️ PREPARING THE UNO BATTLE..." },
+          { time: 1350, text: "🚀 WELCOME TO DRUNK UNO!" }
         ];
 
         let startTime = performance.now();
-        const duration = 3750;
+        const duration = 1500;
         let completed = false;
         let animationFrameId = null;
 
