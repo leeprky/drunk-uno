@@ -17,16 +17,16 @@
   <meta name="format-detection" content="telephone=no" />
 
   <!-- Drunk Uno Custom Game Branding & Native iOS / Android PWA Icons -->
-  <link rel="manifest" href="manifest.json?v=6.1" />
-  <link rel="icon" type="image/x-icon" href="assets/favicon.ico?v=6.1" />
-  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon.png?v=6.1" />
-  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png?v=6.1" />
-  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=6.1" />
-  <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=6.1" />
-  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=6.1" />
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=6.1" />
-  <link rel="apple-touch-icon-precomposed" href="assets/apple-touch-icon.png?v=6.1" />
-  <link rel="shortcut icon" href="assets/favicon.png?v=6.1" />
+  <link rel="manifest" href="manifest.json?v=6.2" />
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico?v=6.2" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon.png?v=6.2" />
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png?v=6.2" />
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=6.2" />
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=6.2" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=6.2" />
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=6.2" />
+  <link rel="apple-touch-icon-precomposed" href="assets/apple-touch-icon.png?v=6.2" />
+  <link rel="shortcut icon" href="assets/favicon.png?v=6.2" />
 
   <!-- Google Fonts: Modern Uno Display (Outfit, Fredoka) & Monospace -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2920,6 +2920,50 @@
       transform: scale(0.96);
     }
 
+    /* 30-Minute Inactivity Warning Banner */
+    .inactivity-warning-banner {
+      position: fixed;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100050;
+      background: rgba(18, 12, 6, 0.96);
+      border: 2px solid #f59e0b;
+      box-shadow: 0 10px 32px rgba(0, 0, 0, 0.85), 0 0 24px rgba(245, 158, 11, 0.45);
+      border-radius: 12px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: 94vw;
+      width: 480px;
+      animation: modalIn 0.35s ease;
+    }
+    .inactivity-warning-icon {
+      font-size: 1.5rem;
+    }
+    .inactivity-warning-text {
+      flex: 1;
+      font-size: 0.82rem;
+      line-height: 1.35;
+      color: #fef3c7;
+    }
+    .btn-keep-room-active {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      border: 1px solid #fef08a;
+      color: #1e1b4b;
+      font-weight: 800;
+      font-size: 0.76rem;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: transform 0.15s ease;
+    }
+    .btn-keep-room-active:active {
+      transform: scale(0.95);
+    }
+
     /* Lock body scroll and keep background transparent when popups are open */
     body:has(.modal-backdrop.open) {
       overflow: hidden !important;
@@ -5030,6 +5074,15 @@
   <!-- Live Action Toast -->
   <div id="toastPill" class="toast-pill">💾 Saved to Cookies</div>
 
+  <!-- 30-Minute Inactivity Warning Banner (Auto-Delete Alert) -->
+  <div id="inactivityWarningBanner" class="inactivity-warning-banner" style="display: none;">
+    <div class="inactivity-warning-icon">⏳</div>
+    <div class="inactivity-warning-text">
+      <strong>Inactivity Alert:</strong> Room will auto-delete in <strong id="inactivityRemainingTime" style="color: #facc15; font-family: 'JetBrains Mono', monospace;">5:00</strong> due to 30m idle.
+    </div>
+    <button type="button" class="btn-keep-room-active" id="keepRoomActiveBtn">Keep Active</button>
+  </div>
+
   <div class="app-container">
     <main class="parchment-board">
       <div class="celtic-frame">
@@ -5037,7 +5090,7 @@
         <!-- Top Navigation Bar (Mobile Header: Top-Left Version & Top-Right Room Info + Settings) -->
         <nav class="top-bar">
           <div class="top-bar-left">
-            <span class="version-badge" id="appVersionBadge" title="Drunk Uno Mobile Engine">v6.1</span>
+            <span class="version-badge" id="appVersionBadge" title="Drunk Uno Mobile Engine">v6.2</span>
             <button type="button" class="room-status-badge" id="topRoomBtn" title="Current Room (Tap to view details, copy invite or switch room)" style="font-size: 0.68rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; padding: 2px 7px; border-radius: 6px; background: rgba(0,0,0,0.5); border: 1.2px solid rgba(255,255,255,0.25); color: #ffd166; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;">
               <span>🏰</span>
               <span id="topRoomCodeTxt">PRESTON</span>
@@ -6055,6 +6108,7 @@
         <div style="font-size: 0.74rem; color: #94a3b8; margin-bottom: 2px; text-transform: uppercase;">ACTIVE ROOM CODE:</div>
         <div id="syncActiveRoomDisplay" style="font-size: 1.6rem; font-family: 'JetBrains Mono', monospace; font-weight: 900; color: #ffd166; letter-spacing: 0.08em;">PRESTON</div>
         <div id="syncActiveModeDisplay" style="font-size: 0.76rem; color: #86efac; margin-top: 4px; font-weight: 700;">⚡ LIVE PARTY SYNC MODE</div>
+        <div id="syncAutoDeleteInfo" style="font-size: 0.72rem; color: #94a3b8; margin-top: 5px; font-family: 'JetBrains Mono', monospace;">⏳ Auto-deletes after 30m inactivity or upon completion</div>
       </div>
       <div style="margin-bottom: 12px;">
         <label style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; font-weight: 700; display: block; margin-bottom: 4px;">SWITCH TO ANOTHER ROOM:</label>
@@ -6065,6 +6119,7 @@
         <button type="button" class="modal-btn secondary" id="copyRoomLinkBtn">📋 Copy Share Link for Friends</button>
         <button type="button" class="modal-btn secondary" id="switchRoomGatewayBtn" style="border-color: #facc15; color: #fef08a;">🔀 Switch Group / Create New Room</button>
         <button type="button" class="modal-btn secondary" id="togglePlayModeBtn" style="display: none; border-color: #38bdf8; color: #7dd3fc;">🔀 Toggle Play Mode</button>
+        <button type="button" class="modal-btn secondary" id="adminSyncDeleteRoomBtn" style="display: none; border-color: #ef4444; color: #fca5a5;">🗑️ Delete & Close Room Now</button>
         <button type="button" class="modal-btn secondary" id="closeRoomSyncModalBtn">Close</button>
       </div>
     </div>
@@ -6331,6 +6386,14 @@
 
       <button type="button" class="modal-btn" id="dismissGameEndWinnerModalBtn" style="width: 100%; font-size: 1.1rem; padding: 12px; font-weight: 800; background: linear-gradient(135deg, #d97706 0%, #b45309 100%); border: 1.5px solid #facc15; color: #fff;">
         🥂 CLOSE & VIEW LEADERBOARD
+      </button>
+
+      <!-- Completed Room Auto-Purge Notice & Admin Immediate Delete Button -->
+      <div id="gameEndAutoDeleteNotice" style="margin-top: 14px; background: rgba(239, 68, 68, 0.18); border: 1.5px solid rgba(239, 68, 68, 0.45); border-radius: 8px; padding: 10px; font-size: 0.8rem; color: #fca5a5;">
+        ⏳ Completed Room Auto-Purge: This room will permanently delete in <strong id="gameEndAutoDeleteTimer" style="color: #ffffff; font-family: 'JetBrains Mono', monospace;">10:00</strong>.
+      </div>
+      <button type="button" class="modal-btn secondary" id="adminPurgeRoomNowBtn" style="margin-top: 8px; width: 100%; border-color: #ef4444; color: #fca5a5; font-size: 0.88rem; display: none;">
+        🗑️ FINISH & DELETE ROOM NOW
       </button>
     </div>
   </div>
@@ -7528,6 +7591,16 @@
         if (raw) {
           try {
             const parsed = JSON.parse(raw);
+            if (parsed) {
+              const now = Date.now();
+              const isInactive = parsed.updatedAt && (now - parsed.updatedAt > INACTIVITY_TIMEOUT_MS);
+              const isCompleted = parsed.gameEnded && parsed.endedAt && (now - parsed.endedAt > COMPLETION_AUTODELETE_MS);
+              if (isInactive || isCompleted) {
+                console.warn(`Room ${roomCode} has expired (inactive: ${isInactive}, completed: ${isCompleted}). Auto-deleting.`);
+                setTimeout(() => { executeAutoRoomDeletion(isInactive ? "30 minutes of inactivity" : "game completed"); }, 50);
+                return;
+              }
+            }
             if (parsed && Array.isArray(parsed.teams) && parsed.teams.length === 4) {
               state.teams = parsed.teams;
               state.teams.forEach(t => {
@@ -7573,6 +7646,7 @@
               if (parsed.myPlayerName) state.myPlayerName = parsed.myPlayerName;
               if (parsed.gameStarted !== undefined) state.gameStarted = parsed.gameStarted;
               if (parsed.gameEnded !== undefined) state.gameEnded = parsed.gameEnded;
+              if (parsed.endedAt !== undefined) state.endedAt = parsed.endedAt;
               if (parsed.winnerTeamIdx !== undefined) state.winnerTeamIdx = parsed.winnerTeamIdx;
               if (parsed.pubWinners && typeof parsed.pubWinners === 'object') {
                 state.pubWinners = parsed.pubWinners;
@@ -7686,7 +7760,19 @@
           });
         }
 
+        checkRoomInactivity();
         modal.classList.add("open");
+
+        const adminPurgeBtn = document.getElementById("adminPurgeRoomNowBtn");
+        if (adminPurgeBtn) {
+          adminPurgeBtn.style.display = isRoomAdmin() ? "block" : "none";
+          adminPurgeBtn.onclick = () => {
+            if (confirm("Are you sure you want to finish and delete this room now? All scores and room data will be permanently cleared.")) {
+              executeAutoRoomDeletion("closed and deleted by Crawl Master");
+            }
+          };
+        }
+
         playFanfare("win");
         spawnCoins(60);
         triggerHaptic([100, 50, 100, 50, 200]);
@@ -8268,8 +8354,151 @@
         }, 1000);
       }
 
+      // --- 02B. AUTOMATIC ROOM EXPIRATION & INACTIVITY DELETION ENGINE ---
+      const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000;    // 30 minutes of inactivity
+      const INACTIVITY_WARN_MS = 25 * 60 * 1000;       // 25 minutes (5 minute warning banner)
+      const COMPLETION_AUTODELETE_MS = 10 * 60 * 1000; // 10 minutes celebration window after game completion
+
+      let inactivityTimerInterval = null;
+
+      function startInactivityMonitor() {
+        if (inactivityTimerInterval) clearInterval(inactivityTimerInterval);
+        inactivityTimerInterval = setInterval(checkRoomInactivity, 10000);
+      }
+
+      function checkRoomInactivity() {
+        if (!roomCode) return;
+        const now = Date.now();
+
+        // 1. Check if completed game has exceeded 10-minute celebration window
+        if (state.gameEnded && state.endedAt) {
+          const completedMs = now - state.endedAt;
+          const remainingCompletionSecs = Math.max(0, Math.floor((COMPLETION_AUTODELETE_MS - completedMs) / 1000));
+          const compTimerEl = document.getElementById("gameEndAutoDeleteTimer");
+          if (compTimerEl) {
+            const cMins = Math.floor(remainingCompletionSecs / 60);
+            const cSecs = String(remainingCompletionSecs % 60).padStart(2, "0");
+            compTimerEl.textContent = `${cMins}:${cSecs}`;
+          }
+
+          if (completedMs >= COMPLETION_AUTODELETE_MS) {
+            executeAutoRoomDeletion("game completed (celebration window ended)");
+            return;
+          }
+        }
+
+        // 2. Check 30 minutes of inactivity
+        if (state.updatedAt) {
+          const idleMs = now - state.updatedAt;
+
+          if (idleMs >= INACTIVITY_TIMEOUT_MS) {
+            executeAutoRoomDeletion("30 minutes of inactivity");
+            return;
+          }
+
+          const warnBanner = document.getElementById("inactivityWarningBanner");
+          if (idleMs >= INACTIVITY_WARN_MS) {
+            const remainingSecs = Math.max(0, Math.floor((INACTIVITY_TIMEOUT_MS - idleMs) / 1000));
+            const mins = Math.floor(remainingSecs / 60);
+            const secs = String(remainingSecs % 60).padStart(2, "0");
+            if (warnBanner) {
+              warnBanner.style.display = "flex";
+              const remEl = document.getElementById("inactivityRemainingTime");
+              if (remEl) remEl.textContent = `${mins}:${secs}`;
+            }
+          } else {
+            if (warnBanner) warnBanner.style.display = "none";
+          }
+        }
+      }
+
+      const keepRoomActiveBtn = document.getElementById("keepRoomActiveBtn");
+      if (keepRoomActiveBtn) {
+        keepRoomActiveBtn.onclick = () => {
+          state.updatedAt = Date.now();
+          saveGameState(true);
+          const warnBanner = document.getElementById("inactivityWarningBanner");
+          if (warnBanner) warnBanner.style.display = "none";
+          showToast("⏳ Room activity renewed! Reset to 30 mins.");
+        };
+      }
+
+      function executeAutoRoomDeletion(reason = "inactivity or completion") {
+        const currentRoom = roomCode;
+        if (!currentRoom) return;
+
+        addLog(`🗑️ Room ${currentRoom} auto-deleted (${reason}).`);
+
+        // 1. Purge retained message on broker by publishing empty string with retained=true
+        if (mqttClient && mqttClient.isConnected()) {
+          try {
+            const emptyStateMsg = new Paho.MQTT.Message("");
+            emptyStateMsg.destinationName = `leeprky/drunkuno/rooms/${currentRoom}/state`;
+            emptyStateMsg.retained = true;
+            mqttClient.send(emptyStateMsg);
+
+            // Notify all peers on /events
+            const evMsg = new Paho.MQTT.Message(JSON.stringify({
+              action: "ROOM_AUTO_DELETED",
+              roomCode: currentRoom,
+              reason: reason,
+              timestamp: Date.now()
+            }));
+            evMsg.destinationName = `leeprky/drunkuno/rooms/${currentRoom}/events`;
+            evMsg.retained = false;
+            mqttClient.send(evMsg);
+          } catch (e) {
+            console.warn("MQTT auto deletion send error:", e);
+          }
+        }
+
+        // 2. Wipe local storage keys for this room
+        const storageKey = getRoomStorageKey(currentRoom);
+        try {
+          localStorage.removeItem(storageKey);
+          localStorage.removeItem("drunk_uno_room_code");
+          localStorage.removeItem("drunk_uno_player_registered");
+          localStorage.removeItem("drunk_uno_player_name");
+          localStorage.removeItem("drunk_uno_crew_setup");
+          localStorage.removeItem("drunk_uno_admin_unlocked_" + currentRoom);
+          deleteCookie(storageKey);
+        } catch (e) {}
+
+        // 3. Reset in-memory room code
+        roomCode = "";
+        state.roomCode = "";
+        try {
+          window.history.replaceState(null, "", window.location.pathname);
+        } catch (e) {}
+
+        // 4. Close all open modals & gate dashboard
+        document.querySelectorAll(".modal-backdrop").forEach(m => m.classList.remove("open"));
+        document.documentElement.classList.add("dashboard-gated");
+        document.body.classList.add("dashboard-gated");
+        const app = document.querySelector(".app-container");
+        if (app) app.classList.remove("revealed");
+
+        // 5. Hide warning banner
+        const warn = document.getElementById("inactivityWarningBanner");
+        if (warn) warn.style.display = "none";
+
+        updateTopRoomBadge();
+        showToast(`🗑️ Room ${currentRoom} has been deleted (${reason}).`);
+        openRoomGatewayModal();
+      }
+
       function applyIncomingState(incoming) {
         if (!incoming || !Array.isArray(incoming.teams)) return;
+
+        // Auto-delete check on incoming state
+        const now = Date.now();
+        const isInactive = incoming.updatedAt && (now - incoming.updatedAt > INACTIVITY_TIMEOUT_MS);
+        const isCompleted = incoming.gameEnded && incoming.endedAt && (now - incoming.endedAt > COMPLETION_AUTODELETE_MS);
+        if (isInactive || isCompleted) {
+          console.warn(`Incoming state expired (inactive: ${isInactive}, completed: ${isCompleted}). Auto-deleting.`);
+          setTimeout(() => { executeAutoRoomDeletion(isInactive ? "30 minutes of inactivity" : "game completed"); }, 50);
+          return;
+        }
         const incomingResetEpoch = incoming.resetEpoch || 0;
         const localResetEpoch = state.resetEpoch || parseInt(localStorage.getItem("drunk_uno_reset_epoch") || "0", 10);
         if (incomingResetEpoch < localResetEpoch) {
@@ -8322,6 +8551,7 @@
         }
         if (incoming.gameStarted !== undefined) state.gameStarted = incoming.gameStarted;
         if (incoming.gameEnded !== undefined) state.gameEnded = incoming.gameEnded;
+        if (incoming.endedAt !== undefined) state.endedAt = incoming.endedAt;
         if (incoming.winnerTeamIdx !== undefined) state.winnerTeamIdx = incoming.winnerTeamIdx;
         if (incoming.pubWinners && typeof incoming.pubWinners === 'object') {
           state.pubWinners = incoming.pubWinners;
@@ -8369,6 +8599,12 @@
 
       function handleRoomEvent(incoming) {
         if (!incoming) return;
+
+        // Room Auto-Deleted Signal (30m inactivity or crawl completion)
+        if (incoming.action === "ROOM_AUTO_DELETED") {
+          executeAutoRoomDeletion(incoming.reason || "inactivity or completion");
+          return;
+        }
 
         // Peer device joined
         if (incoming.action === "DEVICE_JOINED" && incoming.device) {
@@ -8638,6 +8874,16 @@
           mqttClient.onMessageArrived = (message) => {
             try {
               const topic = message.destinationName;
+              const payloadStr = (message.payloadString || "").trim();
+
+              // If retained state topic received an empty string, the room was cleared/deleted on broker
+              if (topic.endsWith("/state") && (!payloadStr || payloadStr === "null")) {
+                if (roomCode) {
+                  executeAutoRoomDeletion("room deleted on server");
+                }
+                return;
+              }
+
               const incoming = JSON.parse(message.payloadString);
 
               // Topic-based routing: /state topic holds authoritative game state
@@ -11344,6 +11590,8 @@
           startBtn.onclick = () => {
             state.gameStarted = true;
             state.gameEnded = false;
+            state.endedAt = null;
+            state.updatedAt = Date.now();
             saveGameState(true);
             renderScoringTab();
             renderAdminTab();
@@ -11357,6 +11605,8 @@
             if (confirm("End the game and display the Winner Celebration leaderboard on all screens?")) {
               state.gameStarted = true;
               state.gameEnded = true;
+              state.endedAt = Date.now();
+              state.updatedAt = Date.now();
 
               const sorted = [...state.teams].sort((a, b) => (b.score !== a.score) ? (b.score - a.score) : (a.sips - b.sips));
               state.winnerTeamIdx = sorted[0].id;
@@ -11364,6 +11614,7 @@
               renderScoringTab();
               renderAdminTab();
               showGameEndWinnerModal(state.winnerTeamIdx);
+              showToast("⏹️ Game ended by Crawl Master!");
             }
           };
         }
@@ -12385,6 +12636,16 @@
         if (modeToggleBtn) {
           modeToggleBtn.style.display = isRoomAdmin() ? "block" : "none";
           modeToggleBtn.textContent = state.playMode === "single" ? "⚡ Switch to Live Party Sync" : "📱 Switch to Single Phone Console";
+        }
+        const adminDeleteBtn = document.getElementById("adminSyncDeleteRoomBtn");
+        if (adminDeleteBtn) {
+          adminDeleteBtn.style.display = isRoomAdmin() ? "block" : "none";
+          adminDeleteBtn.onclick = () => {
+            if (confirm(`Are you sure you want to permanently delete and close room "${roomCode}" for all players?`)) {
+              document.getElementById("roomSyncModal").classList.remove("open");
+              executeAutoRoomDeletion("deleted by Crawl Master");
+            }
+          };
         }
       }
 
@@ -13594,6 +13855,9 @@
 
         animationFrameId = requestAnimationFrame(updateProgress);
       }
+
+      // Start 30-minute inactivity & completed room auto-delete monitor
+      startInactivityMonitor();
 
       // If no room is chosen yet, open Room Gateway immediately
       if (needsRoomGateway || !roomCode) {

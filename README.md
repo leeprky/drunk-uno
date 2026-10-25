@@ -2,7 +2,7 @@
 
 [![Live App](https://img.shields.io/badge/Live%20App-GitHub%20Pages-success.svg?style=for-the-badge&logo=github)](https://leeprky.github.io/drunk-uno/)
 [![Dev Preview](https://img.shields.io/badge/Dev%20Preview-Staging-blueviolet.svg?style=for-the-badge&logo=github)](https://leeprky.github.io/projects/drunk-uno/)
-[![Version](https://img.shields.io/badge/Version-v6.1-amber.svg?style=for-the-badge)](https://leeprky.github.io/drunk-uno/)
+[![Version](https://img.shields.io/badge/Version-v6.2-amber.svg?style=for-the-badge)](https://leeprky.github.io/drunk-uno/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
 > **The Ultimate Uno Drinking Game & Live Party Scoreboard.**  
@@ -27,6 +27,11 @@ Play immediately in your browser on desktop, tablet, iPhone, or Android:
 - **🏰 Multi-Room Private Hub**:
   - Groups can join or create their own private rooms using a unique Room Code.
   - Zero interference between different parties or crawls.
+- **⏳ Automatic Room Lifecycle & Expiration**:
+  - Automatically purges inactive rooms after 30 minutes of idle time.
+  - Displays a 5-minute warning banner with a "Keep Active" renewal button.
+  - Completed crawls auto-delete after a 10-minute celebration window (or instantly via the Crawl Master "Finish & Delete Room Now" button).
+  - Clears retained MQTT broker topics and resets connected devices cleanly.
 - **🛡️ Authoritative Server-Retained Persistence**:
   - State is synchronized over MQTT WebSockets with server broker retention.
   - Phones locking, refreshing, or sleeping will **never revert scores back to 15 points**.
