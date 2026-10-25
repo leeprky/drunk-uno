@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Drop Shadows -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000000" flood-opacity="0.75"/>
+    </filter>
+    <filter id="textGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.9"/>
+    </filter>
+    <filter id="badgeShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000000" flood-opacity="0.8"/>
+    </filter>
+
+    <!-- Metallic Gold Rim Gradients -->
+    <linearGradient id="goldRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff1a8"/>
+      <stop offset="30%" stop-color="#e5b842"/>
+      <stop offset="65%" stop-color="#936417"/>
+      <stop offset="100%" stop-color="#e5b842"/>
+    </linearGradient>
+
+    <!-- Quadrant Color Gradients for 3D depth -->
+    <linearGradient id="redQuad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff4757"/>
+      <stop offset="100%" stop-color="#b71523"/>
+    </linearGradient>
+    <linearGradient id="blueQuad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2ed573"/>
+      <stop offset="0%" stop-color="#1e90ff"/>
+      <stop offset="100%" stop-color="#0952a5"/>
+    </linearGradient>
+    <linearGradient id="greenQuad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2ed573"/>
+      <stop offset="100%" stop-color="#107a38"/>
+    </linearGradient>
+    <linearGradient id="yellowQuad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffa502"/>
+      <stop offset="100%" stop-color="#d68000"/>
+    </linearGradient>
+
+    <!-- Text Fill Gradient -->
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="55%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f1f2f6"/>
+    </linearGradient>
+    <linearGradient id="unoGold" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fff4b8"/>
+      <stop offset="40%" stop-color="#ffd32a"/>
+      <stop offset="100%" stop-color="#f39c12"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Deep Dark iOS Squircle Friendly Base -->
+  <rect width="512" height="512" rx="115" fill="#0f1115"/>
+  <rect width="512" height="512" rx="115" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+
+  <!-- Centered Colorful Uno Wheel -->
+  <g transform="translate(256, 256)" filter="url(#shadow)">
+    <!-- Outer Gold Border Ring -->
+    <circle cx="0" cy="0" r="216" fill="none" stroke="url(#goldRim)" stroke-width="12"/>
+    <circle cx="0" cy="0" r="210" fill="#12151b"/>
+
+    <!-- 4 Uno Color Quadrants (Red, Blue, Green, Yellow) -->
+    <!-- Top-Left: Red -->
+    <path d="M 0,0 L 0,-206 A 206,206 0 0,0 -206,0 Z" fill="url(#redQuad)"/>
+    <!-- Top-Right: Blue -->
+    <path d="M 0,0 L 206,0 A 206,206 0 0,0 0,-206 Z" fill="url(#blueQuad)"/>
+    <!-- Bottom-Left: Yellow -->
+    <path d="M 0,0 L -206,0 A 206,206 0 0,0 0,206 Z" fill="url(#yellowQuad)"/>
+    <!-- Bottom-Right: Green -->
+    <path d="M 0,0 L 0,206 A 206,206 0 0,0 206,0 Z" fill="url(#greenQuad)"/>
+
+    <!-- Quadrant Dividing Cross Lines -->
+    <line x1="0" y1="-206" x2="0" y2="206" stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
+    <line x1="-206" y1="0" x2="206" y2="0" stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
+
+    <!-- Inner Dark Oval / Pill Platform for Maximum Text Legibility -->
+    <ellipse cx="0" cy="0" rx="172" ry="122" fill="#0b0e13" stroke="url(#goldRim)" stroke-width="7" filter="url(#badgeShadow)"/>
+    <ellipse cx="0" cy="0" rx="160" ry="110" fill="#12161f" opacity="0.95"/>
+
+    <!-- Subtle Bevel Gloss on Platform -->
+    <path d="M -150,-10 C -120,-85 120,-85 150,-10 C 100,-45 -100,-45 -150,-10 Z" fill="#ffffff" opacity="0.12"/>
+  </g>
+
+  <!-- BOLD TEXT: DRUNK (TOP) and UNO (BELOW) -->
+  <g text-anchor="middle" filter="url(#textGlow)">
+    <!-- "DRUNK" on top -->
+    <text x="256" y="222"
+          font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Arial Black', Impact, sans-serif"
+          font-size="64"
+          font-weight="900"
+          letter-spacing="5"
+          fill="url(#textGrad)"
+          stroke="#05070a"
+          stroke-width="7"
+          paint-order="stroke fill"
+          font-style="italic">
+      DRUNK
+    </text>
+
+    <!-- "UNO" below -->
+    <text x="256" y="306"
+          font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Arial Black', Impact, sans-serif"
+          font-size="78"
+          font-weight="900"
+          letter-spacing="6"
+          fill="url(#unoGold)"
+          stroke="#05070a"
+          stroke-width="8"
+          paint-order="stroke fill"
+          font-style="italic">
+      UNO
+    </text>
+  </g>
+
+  <!-- Top Gloss Highlight across Entire Icon -->
+  <path d="M 0,0 L 512,0 C 512,180 340,160 0,230 Z" fill="#ffffff" opacity="0.04" pointer-events="none"/>
+</svg>
