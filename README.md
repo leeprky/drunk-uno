@@ -1,6 +1,7 @@
 # 🍻 Drunk Uno — Real-Time Multiplayer Web App
 
 [![Live App](https://img.shields.io/badge/Live%20App-GitHub%20Pages-success.svg?style=for-the-badge&logo=github)](https://leeprky.github.io/drunk-uno/)
+[![Dev Preview](https://img.shields.io/badge/Dev%20Preview-Staging-blueviolet.svg?style=for-the-badge&logo=github)](https://leeprky.github.io/projects/drunk-uno/)
 [![Version](https://img.shields.io/badge/Version-v6.1-amber.svg?style=for-the-badge)](https://leeprky.github.io/drunk-uno/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
@@ -9,9 +10,15 @@
 
 ---
 
-## 🚀 Live Website
-Play immediately in your browser on desktop, tablet, iPhone, or Android:  
-👉 **[https://leeprky.github.io/drunk-uno/](https://leeprky.github.io/drunk-uno/)**
+## 🔗 Quick Access & Live Environments
+
+Play immediately in your browser on desktop, tablet, iPhone, or Android:
+
+| Environment | Branch | Description | Live URL |
+| :--- | :---: | :--- | :--- |
+| 🚀 **Production Site** | `main` | Official production release | **[https://leeprky.github.io/drunk-uno/](https://leeprky.github.io/drunk-uno/)** |
+| 🧪 **Dev Preview** | `dev` | Active development preview | **[https://leeprky.github.io/projects/drunk-uno/](https://leeprky.github.io/projects/drunk-uno/)** |
+| 🌿 **Dev Source Code** | `dev` | Development branch source code | [View `dev` Branch](https://github.com/leeprky/drunk-uno/tree/dev) |
 
 ---
 
