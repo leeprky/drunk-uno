@@ -172,32 +172,6 @@
       font-size: 16px !important;
     }
 
-    /* Version Badge in Top Left */
-    .version-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.6px;
-      color: #38bdf8;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      padding: 3px 8px;
-      border: 1px solid var(--theme-border, var(--gold));
-      border-top: 1px solid rgba(255, 255, 255, 0.35);
-      border-radius: 6px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-    .version-badge::before {
-      content: "●";
-      font-size: 0.55rem;
-      color: #2ecc71;
-    }
 
     /* Satin Ridges Dynamic Background Canvas (Vibrant & Apparent Tavern Glow) */
     #satinCanvas {
@@ -429,11 +403,7 @@
         gap: 5px !important;
         flex: 0 0 auto !important;
       }
-      .version-badge {
-        font-size: 0.68rem !important;
-        padding: 2px 6px !important;
-        flex-shrink: 0 !important;
-      }
+
       .user-profile-badge {
         font-size: 0.68rem !important;
         padding: 3px 8px !important;
@@ -4631,12 +4601,7 @@
     body.light-mode .dock-tab.secret-tab {
       color: #8b1e1e !important;
     }
-    body.light-mode .version-badge {
-      background: rgba(255, 255, 255, 0.88);
-      color: #5c3915;
-      border-color: var(--theme-border, #b38e50);
-      box-shadow: 0 2px 6px rgba(90, 60, 20, 0.14);
-    }
+
     body.light-mode .back-home-link,
     body.light-mode .user-profile-badge,
     body.light-mode .settings-btn {
@@ -12728,6 +12693,20 @@
       function openRoomGatewayModal(alertMsg = "", alertType = "warn") {
         const modal = document.getElementById("roomGatewayModal");
         if (!modal) return;
+        modal.style.display = "flex";
+        modal.classList.add("open");
+        const createBtn = document.getElementById("gatewayCreateSubmitBtn");
+        if (createBtn) {
+          createBtn.disabled = false;
+          createBtn.innerHTML = '<span>⚔️ CREATE & LAUNCH ROOM 🎉</span>';
+          createBtn.style.opacity = "1";
+        }
+        const joinBtn = document.getElementById("gatewayJoinSubmitBtn");
+        if (joinBtn) {
+          joinBtn.disabled = false;
+          joinBtn.innerHTML = '<span>ENTER ROOM ➡️</span>';
+          joinBtn.style.opacity = "1";
+        }
         const joinInp = document.getElementById("gatewayJoinCodeInput");
         const createInp = document.getElementById("gatewayCreateCodeInput");
         if (joinInp && roomCode) joinInp.value = roomCode;
@@ -12740,7 +12719,6 @@
           hideJoinAlert();
           hideCreateAlert();
         }
-        modal.classList.add("open");
       }
 
       // Check whether a room code exists and is active (Server REST or broker probe)
@@ -12776,11 +12754,15 @@
         return new Promise((resolve) => {
           let resolved = false;
           let timer = null;
+          let cleanupProbe = null;
+          let cleanupMqttProbe = null;
 
           function done(result) {
             if (resolved) return;
             resolved = true;
             if (timer) clearTimeout(timer);
+            if (cleanupProbe) cleanupProbe();
+            if (cleanupMqttProbe) cleanupMqttProbe();
             resolve(result);
           }
 
@@ -12793,10 +12775,14 @@
             const checkTopic = `leeprky/drunkuno/rooms/${cleanCode}/state`;
             const prevHandler = mqttClient.onMessageArrived;
 
+            cleanupMqttProbe = () => {
+              try { mqttClient.unsubscribe(checkTopic); } catch (e) {}
+              mqttClient.onMessageArrived = prevHandler;
+            };
+
             const tempHandler = (message) => {
               if (message.destinationName === checkTopic) {
-                try { mqttClient.unsubscribe(checkTopic); } catch (e) {}
-                mqttClient.onMessageArrived = prevHandler;
+                cleanupMqttProbe();
                 const payloadStr = (message.payloadString || "").trim();
                 if (!payloadStr || payloadStr === "null") {
                   return done({ exists: false, reason: "deleted" });
@@ -12822,7 +12808,7 @@
             try {
               mqttClient.subscribe(checkTopic);
             } catch (e) {
-              mqttClient.onMessageArrived = prevHandler;
+              cleanupMqttProbe();
               done({ exists: false, reason: "error" });
             }
             return;
@@ -12837,7 +12823,7 @@
             return done({ exists: false, reason: "error" });
           }
 
-          const cleanupProbe = () => {
+          cleanupProbe = () => {
             if (probe) {
               try { probe.onMessageArrived = () => {}; } catch (e) {}
               try { probe.disconnect(); } catch (e) {}
@@ -13014,7 +13000,10 @@
             updateTopRoomBadge();
 
             const modal = document.getElementById("roomGatewayModal");
-            if (modal) modal.classList.remove("open");
+            if (modal) {
+              modal.classList.remove("open");
+              modal.style.display = "none";
+            }
 
             document.documentElement.classList.remove("dashboard-gated");
             document.body.classList.remove("dashboard-gated");
@@ -13030,15 +13019,19 @@
             }
           } catch (err) {
             console.error("Join room check error:", err);
-            gatewayJoinSubmit.disabled = false;
-            gatewayJoinSubmit.innerHTML = '<span>ENTER ROOM ➡️</span>';
-            gatewayJoinSubmit.style.opacity = "1";
             showJoinAlert("⚠️ An unexpected error occurred while verifying room code.", "error");
+          } finally {
+            const modal = document.getElementById("roomGatewayModal");
+            if (!roomCode || (modal && modal.style.display !== "none" && modal.classList.contains("open"))) {
+              gatewayJoinSubmit.disabled = false;
+              gatewayJoinSubmit.innerHTML = '<span>ENTER ROOM ➡️</span>';
+              gatewayJoinSubmit.style.opacity = "1";
+            }
           }
         };
       }
 
-      // Submit CREATE ROOM (with Conflict Verification)
+      // Submit CREATE ROOM (Instant Creation & Conflict Verification)
       const gatewayCreateSubmit = document.getElementById("gatewayCreateSubmitBtn");
       if (gatewayCreateSubmit) {
         gatewayCreateSubmit.onclick = async () => {
@@ -13048,32 +13041,36 @@
             codeVal = "CRAWL-" + Math.floor(10 + Math.random() * 90);
           }
 
-          // Check if this room code is ALREADY active on the broker
           gatewayCreateSubmit.disabled = true;
-          gatewayCreateSubmit.innerHTML = '<span>⏳ CHECKING CODE AVAILABILITY...</span>';
+          gatewayCreateSubmit.innerHTML = '<span>⏳ CREATING ROOM...</span>';
           gatewayCreateSubmit.style.opacity = "0.75";
           hideCreateAlert();
 
           try {
-            const check = await verifyRoomExists(codeVal, 1600);
-            if (check.exists) {
-              gatewayCreateSubmit.disabled = false;
-              gatewayCreateSubmit.innerHTML = '<span>⚔️ CREATE & LAUNCH ROOM 🎉</span>';
-              gatewayCreateSubmit.style.opacity = "1";
-              playBuzzer();
-              showCreateAlert(`⚠️ Room <strong>"${codeVal}"</strong> already exists and is active! <a href="#" id="joinExistingRoomLink" style="color: #4ade80; font-weight: 800; text-decoration: underline; margin-left: 6px;">Join this room instead</a> or pick a different code.`, "warn");
+            // Direct fast server collision check if authoritative server is connected
+            const serverHttp = getServerHttpUrl();
+            if (serverHttp) {
+              try {
+                const check = await verifyRoomExists(codeVal, 800);
+                if (check.exists) {
+                  playBuzzer();
+                  showCreateAlert(`⚠️ Room <strong>"${codeVal}"</strong> already exists and is active! <a href="#" id="joinExistingRoomLink" style="color: #4ade80; font-weight: 800; text-decoration: underline; margin-left: 6px;">Join this room instead</a> or pick a different code.`, "warn");
 
-              const joinLink = document.getElementById("joinExistingRoomLink");
-              if (joinLink) {
-                joinLink.onclick = (e) => {
-                  e.preventDefault();
-                  switchToJoinPaneWithCode(codeVal);
-                };
+                  const joinLink = document.getElementById("joinExistingRoomLink");
+                  if (joinLink) {
+                    joinLink.onclick = (e) => {
+                      e.preventDefault();
+                      switchToJoinPaneWithCode(codeVal);
+                    };
+                  }
+                  return;
+                }
+              } catch (e) {
+                console.warn("Server room pre-check bypassed:", e);
               }
-              return;
             }
 
-            // Room code is free! Proceed to create
+            // Room code is free to initialize! Proceed to create
             const passInp = document.getElementById("gatewayAdminPasscodeInput");
             const adminPass = (passInp?.value || "").trim() || ADMIN_PASSCODE;
             const chosenMode = document.querySelector('input[name="gatewayPlayMode"]:checked')?.value || "party";
@@ -13108,7 +13105,10 @@
             updateTopRoomBadge();
 
             const modal = document.getElementById("roomGatewayModal");
-            if (modal) modal.classList.remove("open");
+            if (modal) {
+              modal.classList.remove("open");
+              modal.style.display = "none";
+            }
 
             document.documentElement.classList.remove("dashboard-gated");
             document.body.classList.remove("dashboard-gated");
@@ -13136,10 +13136,11 @@
             }
           } catch (err) {
             console.error("Create room check error:", err);
+            showCreateAlert("⚠️ An unexpected error occurred while creating room.", "error");
+          } finally {
             gatewayCreateSubmit.disabled = false;
             gatewayCreateSubmit.innerHTML = '<span>⚔️ CREATE & LAUNCH ROOM 🎉</span>';
             gatewayCreateSubmit.style.opacity = "1";
-            showCreateAlert("⚠️ An unexpected error occurred while checking code availability.", "error");
           }
         };
       }
@@ -14134,22 +14135,6 @@
       initIntroLoadingScreen(() => {
         if (needsRoomGateway || !roomCode) {
           openRoomGatewayModal();
-          return;
-        }
-
-        const isLocallyActiveSession = state && state.updatedBy === "Room Creator" && state.adminUnlocked;
-        if (!hasReceivedBrokerState && !isLocallyActiveSession) {
-          const invalidRoom = roomCode;
-          roomCode = "";
-          state.roomCode = "";
-          try {
-            localStorage.removeItem("drunk_uno_room_code");
-            window.history.replaceState(null, "", window.location.pathname);
-          } catch (e) {}
-          openRoomGatewayModal();
-          showJoinAlert(`⚠️ Room <strong>"${invalidRoom}"</strong> was not found or has expired. Please check the code with your host or create a new room below.`, "warn");
-          const inp = document.getElementById("gatewayJoinCodeInput");
-          if (inp) inp.value = invalidRoom;
           return;
         }
 
