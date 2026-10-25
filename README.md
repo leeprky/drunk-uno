@@ -2,7 +2,6 @@
 
 [![Live App](https://img.shields.io/badge/Live%20App-GitHub%20Pages-success.svg?style=for-the-badge&logo=github)](https://leeprky.github.io/drunk-uno/)
 [![Dev Preview](https://img.shields.io/badge/Dev%20Preview-Staging-blueviolet.svg?style=for-the-badge&logo=github)](https://leeprky.github.io/projects/drunk-uno/)
-[![Version](https://img.shields.io/badge/Version-v6.3-amber.svg?style=for-the-badge)](https://leeprky.github.io/drunk-uno/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
 > **The Ultimate Uno Drinking Game & Live Party Scoreboard.**  
