@@ -7035,7 +7035,7 @@
         logs: ["Session initialized." + (roomCode ? " Connected to Room: " + roomCode : "")],
         sound: true,
         adminUnlocked: false,
-        gameStarted: false,
+        gameStarted: true,
         gameEnded: false,
         winnerTeamIdx: null,
         pubWinners: {} // stopIdx -> teamIdx (crowns up to 10)
@@ -7402,11 +7402,8 @@
           showGameEndWinnerModal(state.winnerTeamIdx);
           return true;
         }
-        if (state.playMode === "single") {
-          return false; // Single Phone Console mode allows instant scoring without pre-game block
-        }
-        if (!state.gameStarted) {
-          showToast('⏳ Game has not started yet! Waiting for Crawl Master to hit ▶️ START GAME.');
+        if (state.isGameLocked) {
+          showToast('❄️ Game is currently paused/frozen by Crawl Master.');
           playTick(240);
           return true;
         }
@@ -8204,22 +8201,20 @@
         const incomingResetEpoch = incoming.resetEpoch || 0;
         const localResetEpoch = state.resetEpoch || 0;
 
-        if (!hasReceivedBrokerState) {
-          // First state message from broker is authoritative for this session
-          hasReceivedBrokerState = true;
-        } else {
-          if (incomingResetEpoch < localResetEpoch) {
-            return;
-          }
-          const incTime = incoming.updatedAt || 0;
-          const locTime = state.updatedAt || 0;
-          if (incomingResetEpoch === localResetEpoch && incTime < locTime) {
-            return;
-          }
+        if (incomingResetEpoch < localResetEpoch) {
+          return;
         }
 
         const incVer = incoming.version || 0;
         const locVer = state.version || 0;
+
+        if (!hasReceivedBrokerState) {
+          // First state message from broker is authoritative for this session
+          hasReceivedBrokerState = true;
+        } else if (incomingResetEpoch === localResetEpoch && incVer < locVer) {
+          // Discard incoming state if strictly older in logical revision within same epoch
+          return;
+        }
 
         state.teams = incoming.teams;
         state.teams.forEach(t => {
@@ -8611,7 +8606,9 @@
 
           mqttClient.connect({
             useSSL: true,
-            timeout: 5,
+            timeout: 15,
+            keepAliveInterval: 30,
+            cleanSession: true,
             onSuccess: () => {
               syncBtn.classList.remove("offline");
               syncBtn.classList.remove("connecting");
@@ -8620,6 +8617,13 @@
               mqttClient.subscribe(`leeprky/drunkuno/rooms/${roomCode}/events`);
               mqttClient.subscribe(`leeprky/drunkuno/${roomCode}`);
               
+              // Broadcast current state to broker if broker has no retained state after 750ms
+              setTimeout(() => {
+                if (!hasReceivedBrokerState && state && state.roomCode && mqttClient && mqttClient.isConnected()) {
+                  saveGameState(true);
+                }
+              }, 750);
+
               // Inform existing room peers that this device has connected
               syncMyDevice();
             },
@@ -8628,7 +8632,7 @@
               syncBtn.classList.remove("connecting");
               syncBtn.classList.add("offline");
               syncLabel.textContent = "DISCONNECTED";
-              setTimeout(initMqttSync, 8000);
+              setTimeout(initMqttSync, 5000);
             }
           });
         } catch (e) {
@@ -8642,6 +8646,12 @@
         if (!mqttClient || !mqttClient.isConnected()) {
           hasReceivedBrokerState = false;
           initMqttSync();
+        } else {
+          try {
+            // Re-subscribe to force broker to push the latest retained state immediately upon unlock
+            mqttClient.unsubscribe(`leeprky/drunkuno/rooms/${roomCode}/state`);
+            mqttClient.subscribe(`leeprky/drunkuno/rooms/${roomCode}/state`);
+          } catch (e) {}
         }
       }
 
@@ -9392,25 +9402,6 @@
 
       function checkSpectatorBlock() {
         if (checkGameActiveBlock()) return true;
-        if (state.playMode === "single") {
-          return false; // Single Phone Mode is open to master scoring without spectator block!
-        }
-        if (!isPlayerRegistered()) {
-          showToast("👀 Spectators cannot score! Join a crew to start playing.");
-          playTick(240);
-          openCrewSetupModal(false);
-          return true;
-        }
-        const myTeam = state.teams[state.myTeamIdx];
-        if (myTeam && myTeam.targetIdx !== undefined && myTeam.targetIdx !== null) {
-          if (state.targetTeamIdx !== myTeam.targetIdx) {
-            const assignedTarget = state.teams[myTeam.targetIdx];
-            const assignedName = assignedTarget ? assignedTarget.name : `Team ${myTeam.targetIdx}`;
-            showToast(`🔒 Anti-Cheat: Your crew referees ${assignedName}! You cannot score other teams.`);
-            playTick(240);
-            return true;
-          }
-        }
         return false;
       }
 
@@ -9485,130 +9476,47 @@
         const targetHeaderTxt = document.getElementById("targetSectionHeaderTxt");
         if (targetPicker) {
           targetPicker.innerHTML = "";
-          if (state.playMode === "single") {
-            if (targetHeaderTxt) targetHeaderTxt.textContent = "🎯 SELECT CREW TO SCORE (SINGLE PHONE CONSOLE):";
-            targetPicker.style.display = "block";
-            const teamButtons = state.teams.map((t, idx) => {
-              const isSel = idx === state.targetTeamIdx;
-              return `
-                <button type="button" class="btn-single-team-select" data-team-idx="${idx}" style="
-                  background: ${isSel ? t.colorHex : 'rgba(15,23,42,0.85)'};
-                  color: ${isSel ? '#ffffff' : t.colorHex};
-                  border: 2px solid ${t.colorHex};
-                  border-radius: 10px;
-                  padding: 10px 4px;
-                  font-family: var(--font-uno);
-                  cursor: pointer;
-                  box-shadow: ${isSel ? '0 0 16px ' + t.colorHex + '88' : 'none'};
-                  display: flex;
-                  flex-direction: column;
-                  align-items: center;
-                  gap: 2px;
-                ">
-                  <div style="font-size: 1.15rem; font-weight: 900;">${t.key.charAt(0)}</div>
-                  <div style="font-size: 0.68rem; font-weight: 800; text-transform: uppercase;">${escapeHtml(t.name.replace('Team ', ''))}</div>
-                  <div style="font-size: 0.85rem; font-weight: 900; margin-top: 2px;">${t.score}p</div>
-                </button>
-              `;
-            }).join('');
-            targetPicker.innerHTML = `<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px;">${teamButtons}</div>`;
-            targetPicker.querySelectorAll(".btn-single-team-select").forEach(b => {
-              b.onclick = () => {
-                state.targetTeamIdx = parseInt(b.dataset.teamIdx, 10);
-                playTick(450);
-                renderScoringTab();
-              };
-            });
-          } else if (isRegistered && myTeam) {
-            if (targetHeaderTxt) targetHeaderTxt.textContent = "🎯 SCORING TARGET:";
-            targetPicker.style.display = "block";
-
-            // Force targetTeamIdx to this crew's locked assigned referee target
-            const assignedTargetIdx = (myTeam.targetIdx !== undefined && myTeam.targetIdx !== null && state.teams[myTeam.targetIdx])
-              ? myTeam.targetIdx
-              : ((state.myTeamIdx + 1) % 4);
-            state.targetTeamIdx = assignedTargetIdx;
-            const targetTeam = state.teams[assignedTargetIdx];
-
-            let bgHex = "#d62828";
-            if (targetTeam.colorClass === "blue") bgHex = "#2b7fff";
-            else if (targetTeam.colorClass === "green") bgHex = "#2ecc71";
-            else if (targetTeam.colorClass === "yellow") bgHex = "#f59e0b";
-
-            const capTxt = targetTeam.captain ? `Captain: ${escapeHtml(targetTeam.captain)}` : `Crew: ${targetTeam.players?.length || 0} players`;
-
-            const card = document.createElement("div");
-            card.className = "assigned-referee-target-card";
-            card.style.cssText = `
-              background: linear-gradient(135deg, rgba(20,26,38,0.92) 0%, rgba(12,16,24,0.98) 100%);
-              border: 2px solid ${bgHex};
-              box-shadow: 0 4px 20px rgba(0,0,0,0.5), 0 0 16px ${bgHex}33;
-              border-radius: 14px;
-              padding: 14px 16px;
-              display: flex;
-              align-items: center;
-              justify-content: space-between;
-              flex-wrap: wrap;
-              gap: 12px;
-              width: 100%;
-              box-sizing: border-box;
-            `;
-
-            card.innerHTML = `
-              <div style="display: flex; align-items: center; gap: 12px;">
-                <div class="color-badge" style="background: ${bgHex}; width: 44px; height: 44px; font-size: 1.4rem; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #fff; box-shadow: 0 4px 12px ${bgHex}66;">
-                  ${targetTeam.key.charAt(0)}
-                </div>
-                <div>
-                  <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                    <span style="font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #86efac; background: rgba(34,197,94,0.18); border: 1px solid rgba(34,197,94,0.4); padding: 2px 7px; border-radius: 6px;">
-                      🎯 ASSIGNED REFEREE TARGET
-                    </span>
-                    <span style="font-size: 0.72rem; color: #94a3b8;">(Locked Cross-Examining)</span>
-                  </div>
-                  <div style="font-family: var(--font-uno); font-size: 1.35rem; font-weight: 900; color: ${targetTeam.colorClass === 'yellow' ? '#ffd885' : bgHex}; margin-top: 2px;">
-                    ${escapeHtml(targetTeam.name)}
-                  </div>
-                  <div style="font-size: 0.78rem; color: #cbd5e1; margin-top: 2px;">
-                    👑 ${capTxt} • 🏆 Crowns: <strong>${targetTeam.crowns || 0}</strong> • 🍺 Drinks: <strong>${targetTeam.sips || 0}</strong> • Points: <strong>${targetTeam.score || 0}</strong>
-                  </div>
-                </div>
-              </div>
-              <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
-                <span style="font-size: 0.72rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #f1f5f9; padding: 4px 8px; border-radius: 6px; font-weight: 700;">
-                  🔒 Only Your Crew Can Score Them
-                </span>
-              </div>
-            `;
-            targetPicker.appendChild(card);
-          } else {
-            if (targetHeaderTxt) targetHeaderTxt.textContent = "🎯 TEAMS STATS (SPECTATOR MODE):";
-            targetPicker.style.display = "";
-            state.teams.forEach((t, idx) => {
-              const btn = document.createElement("button");
-              btn.type = "button";
-              btn.className = `btn-pick-team team-btn-${t.colorClass} ${idx === state.targetTeamIdx ? "selected" : ""}`;
-              btn.innerHTML = `
-                <span class="crew-dot ${t.colorClass}"></span>
-                <span class="team-name-txt">${escapeHtml(t.name)}</span>
-                <span class="sub">Inspect Crew</span>
-              `;
-              btn.onclick = () => {
-                state.targetTeamIdx = idx;
-                saveGameState(false);
-                renderScoringTab();
-              };
-              targetPicker.appendChild(btn);
-            });
+          if (targetHeaderTxt) {
+            targetHeaderTxt.textContent = "🎯 SELECT CREW TO SCORE / REFEREE:";
           }
+          targetPicker.style.display = "block";
+          const teamButtons = state.teams.map((t, idx) => {
+            const isSel = idx === state.targetTeamIdx;
+            return `
+              <button type="button" class="btn-single-team-select" data-team-idx="${idx}" style="
+                background: ${isSel ? t.colorHex : 'rgba(15,23,42,0.85)'};
+                color: ${isSel ? '#ffffff' : t.colorHex};
+                border: 2px solid ${t.colorHex};
+                border-radius: 10px;
+                padding: 10px 4px;
+                font-family: var(--font-uno);
+                cursor: pointer;
+                box-shadow: ${isSel ? '0 0 16px ' + t.colorHex + '88' : 'none'};
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 2px;
+              ">
+                <div style="font-size: 1.15rem; font-weight: 900;">${t.key.charAt(0)}</div>
+                <div style="font-size: 0.68rem; font-weight: 800; text-transform: uppercase;">${escapeHtml(t.name.replace('Team ', ''))}</div>
+                <div style="font-size: 0.85rem; font-weight: 900; margin-top: 2px;">${t.score}p</div>
+              </button>
+            `;
+          }).join('');
+          targetPicker.innerHTML = `<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px;">${teamButtons}</div>`;
+          targetPicker.querySelectorAll(".btn-single-team-select").forEach(b => {
+            b.onclick = () => {
+              state.targetTeamIdx = parseInt(b.dataset.teamIdx, 10);
+              playTick(450);
+              renderScoringTab();
+            };
+          });
         }
 
         // Step 3: Render Active Scoring Console Themed to Target Team
         const consoleEl = document.getElementById("scoringConsole");
         const targetTeam = state.teams[state.targetTeamIdx] || state.teams[1];
         const targetCaptain = targetTeam.captain ? ` • 👑 Captain: ${escapeHtml(targetTeam.captain)}` : "";
-        const isTargetReferee = isRegistered && (myTeam.targetIdx === state.targetTeamIdx);
-        const otherRefereeCrew = state.teams.find((tm, i) => i !== state.myTeamIdx && tm.targetIdx === state.targetTeamIdx && (tm.targetLocked || tm.targetLockedBy));
 
         consoleEl.style.border = `2px solid ${targetTeam.colorHex}77`;
         consoleEl.style.boxShadow = `0 8px 30px rgba(0, 0, 0, 0.55), 0 0 22px ${targetTeam.colorHex}30`;
@@ -9623,11 +9531,7 @@
                   ${targetTeam.frozen ? `<span style="font-size: 0.9rem; color: #38bdf8;">[❄️ FROZEN]</span>` : ""}
                 </div>
                 <div style="font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; color: #cbd5e1;">
-                  ${!isRegistered 
-                    ? 'Mode: <strong style="color:#ffffff;">Spectator (Scoreboard View)</strong>' 
-                    : (isTargetReferee 
-                        ? `Scoring as Referee: <strong style="color:#86efac;">${escapeHtml(myTeam.name)} 🎯</strong>` 
-                        : `Viewing: <strong style="color:#fca5a5;">Refereed by ${otherRefereeCrew ? escapeHtml(otherRefereeCrew.name) : 'Rival Crew'} 🔒 (View Only)</strong>`)}${targetCaptain} • ${targetTeam.sips} drinks taken
+                  ${targetCaptain}👥 ${targetTeam.players?.length || 0} crew members • 🍺 ${targetTeam.sips} drinks taken
                 </div>
               </div>
             </div>
@@ -9854,7 +9758,8 @@
             if (checkSpectatorBlock()) return;
             const count = parseInt(btn.dataset.sipAdd, 10);
             targetTeam.sips += count;
-            addLog(`🍺 ${targetTeam.name} logged ${count} drink/sip(s) by ${myTeam.name}.`);
+            const drinker = (myTeam && myTeam.name) ? myTeam.name : (state.myPlayerName || 'Drinker');
+            addLog(`🍺 ${targetTeam.name} logged ${count} drink/sip(s) by ${drinker}.`);
             playBuzzer();
             saveGameState(true);
             renderCrewBar();
@@ -12564,9 +12469,7 @@
           state.roomCode = roomCode;
           state.adminPasscode = adminPass;
           state.playMode = chosenMode;
-          if (chosenMode === "single") {
-            state.gameStarted = true;
-          }
+          state.gameStarted = true;
           state.version = 1;
           state.updatedAt = Date.now();
           state.updatedBy = "Room Creator";
