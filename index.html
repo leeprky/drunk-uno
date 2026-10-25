@@ -3,30 +3,30 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>DRUNK: UNO</title>
+  <title>DRUNK UNO // Real-Time Multiplayer Party Game</title>
 
   <!-- Open Graph & Mobile App Meta (Optimized for iOS Safari & Android Chrome) -->
-  <meta name="description" content="The Ultimate Uno Team Crawl: Preston Route — 10 Stops to Crown the Champions. Wheel of Doom, Real-Time Phone Sync Scoreboard, Interactive Map, Uno Card Codex & Secret Bingo." />
+  <meta name="description" content="The Ultimate Uno Drinking Game & Live Party Scoreboard. Create private group rooms, sync scores across smartphones in real time, spin the Wheel of Doom, and conquer Uno party challenges." />
   <meta name="theme-color" content="#0d1117">
   <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="DRUNK: UNO" />
+  <meta name="apple-mobile-web-app-title" content="DRUNK UNO" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="format-detection" content="telephone=no" />
 
   <!-- Drunk Uno Custom Game Branding & Native iOS / Android PWA Icons -->
-  <link rel="manifest" href="manifest.json?v=6.2" />
-  <link rel="icon" type="image/x-icon" href="assets/favicon.ico?v=6.2" />
-  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon.png?v=6.2" />
-  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png?v=6.2" />
-  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=6.2" />
-  <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=6.2" />
-  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=6.2" />
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=6.2" />
-  <link rel="apple-touch-icon-precomposed" href="assets/apple-touch-icon.png?v=6.2" />
-  <link rel="shortcut icon" href="assets/favicon.png?v=6.2" />
+  <link rel="manifest" href="manifest.json?v=6.3" />
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico?v=6.3" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon.png?v=6.3" />
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png?v=6.3" />
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=6.3" />
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=6.3" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=6.3" />
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=6.3" />
+  <link rel="apple-touch-icon-precomposed" href="assets/apple-touch-icon.png?v=6.3" />
+  <link rel="shortcut icon" href="assets/favicon.png?v=6.3" />
 
   <!-- Google Fonts: Modern Uno Display (Outfit, Fredoka) & Monospace -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2288,7 +2288,7 @@
     }
 
     /* =========================================================================
-       07. TAB 3: INTERACTIVE PRESTON ROUTE MAP & 10 STOPS
+       07. TAB 3: UNO CARD CODEX & RULES
        ========================================================================= */
     .map-panel {
       display: flex;
@@ -5090,10 +5090,10 @@
         <!-- Top Navigation Bar (Mobile Header: Top-Left Version & Top-Right Room Info + Settings) -->
         <nav class="top-bar">
           <div class="top-bar-left">
-            <span class="version-badge" id="appVersionBadge" title="Drunk Uno Mobile Engine">v6.2</span>
+            <span class="version-badge" id="appVersionBadge" title="Drunk Uno Mobile Engine">v6.3</span>
             <button type="button" class="room-status-badge" id="topRoomBtn" title="Current Room (Tap to view details, copy invite or switch room)" style="font-size: 0.68rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; padding: 2px 7px; border-radius: 6px; background: rgba(0,0,0,0.5); border: 1.2px solid rgba(255,255,255,0.25); color: #ffd166; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;">
               <span>🏰</span>
-              <span id="topRoomCodeTxt">PRESTON</span>
+              <span id="topRoomCodeTxt">SELECT ROOM</span>
               <span id="topRoomModeTag" style="font-size: 0.58rem; background: #38bdf8; color: #000; padding: 1px 4px; border-radius: 3px; font-weight: 900; display: inline-block;">LIVE</span>
             </button>
             <button type="button" class="user-profile-badge" id="topUserBadge" title="Your Linked Player Name (Tap to edit crew)">
@@ -5116,7 +5116,7 @@
           </div>
         </nav>
 
-        <!-- Main Header & Active Pub Banner -->
+        <!-- Main Header & Active Room Status Banner -->
         <header class="header-area">
           <div class="ribbon-banner">
             <img src="assets/drunk-uno-logo.png" alt="Drunk Uno Logo" style="width: 32px; height: 32px; vertical-align: middle; border-radius: 8px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6));" />
@@ -5124,14 +5124,14 @@
             <img src="assets/drunk-uno-logo.png" alt="Drunk Uno Logo" style="width: 32px; height: 32px; vertical-align: middle; border-radius: 8px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6));" />
           </div>
           <div class="header-subtext">
-            Preston Route // 10 Stops · Live Scoreboard across all phones
+            Global Party Sync // Real-Time Multiplayer Scoreboard
           </div>
 
-          <!-- Active Pub Ticker -->
+          <!-- Active Game Status Ticker -->
           <div class="pub-ticker" id="pubTicker">
             <div class="pub-ticker-info">
-              <span>📍 CURRENT PUB:</span>
-              <b id="tickerPubName">Stop 1: The Station</b>
+              <span>⚡ ROOM STATUS:</span>
+              <b id="tickerPubName">Active Room • 4 Crews Competing</b>
             </div>
           </div>
         </header>
@@ -5413,152 +5413,7 @@
 
 
         <!-- ===================================================================
-             TAB 3: INTERACTIVE PRESTON ROUTE MAP & 10 STOPS
-             =================================================================== -->
-        <section id="tab-map" class="tab-panel">
-          <div class="map-panel">
-
-            <div class="interactive-map-card">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
-                <h3 style="font-family: var(--font-uno); font-size: 1.5rem; margin: 0;">
-                  🗺️ CRAWL MAP // TAP PINS TO VIEW
-                </h3>
-                <button type="button" class="btn-stop-check" id="openMapLightboxBtn">
-                  🔍 Fullscreen View
-                </button>
-              </div>
-
-              <!-- Map Container with Clickable SVG Pin Hotspots -->
-              <div class="map-canvas-wrap" id="mapCanvasWrap">
-                <img src="assets/map.png" alt="Preston Route Map" id="mapMainImage" />
-
-                <!-- SVG Overlay Pins: Flashing UNO Cards for all 10 Pubs -->
-                <svg class="map-pins-svg" viewBox="0 0 1024 572" preserveAspectRatio="none">
-                  <!-- Stop 1: The Station (Card 1 - Red) -->
-                  <g class="map-uno-card" data-pin="0" transform="translate(171, 457)">
-                    <rect class="card-hitbox" x="-20" y="-28" width="40" height="56" fill="transparent" pointer-events="all"/>
-                    <rect class="card-halo" x="-17" y="-24" width="34" height="48" rx="6" pointer-events="none"/>
-                    <g class="card-body" pointer-events="none">
-                      <rect x="-14" y="-20" width="28" height="40" rx="4" fill="#d62828" stroke="#150903" stroke-width="2"/>
-                      <ellipse cx="0" cy="0" rx="8" ry="12.5" fill="#ffffff" transform="rotate(-25)"/>
-                      <text x="0" y="0.5" fill="#111111" font-family="'JetBrains Mono', 'Arial Black', Impact, sans-serif" font-weight="900" font-size="15" text-anchor="middle" dominant-baseline="central">1</text>
-                    </g>
-                  </g>
-
-                  <!-- Stop 2: All Hopes No Promises (Card 2 - Blue) -->
-                  <g class="map-uno-card" data-pin="1" transform="translate(433, 446)">
-                    <rect class="card-hitbox" x="-20" y="-28" width="40" height="56" fill="transparent" pointer-events="all"/>
-                    <rect class="card-halo" x="-17" y="-24" width="34" height="48" rx="6" pointer-events="none"/>
-                    <g class="card-body" pointer-events="none">
-                      <rect x="-14" y="-20" width="28" height="40" rx="4" fill="#1d63b8" stroke="#150903" stroke-width="2"/>
-                      <ellipse cx="0" cy="0" rx="8" ry="12.5" fill="#ffffff" transform="rotate(-25)"/>
-                      <text x="0" y="0.5" fill="#111111" font-family="'JetBrains Mono', 'Arial Black', Impact, sans-serif" font-weight="900" font-size="15" text-anchor="middle" dominant-baseline="central">2</text>
-                    </g>
-                  </g>
-
-                  <!-- Stop 3: Wings & Beer Co (Card 3 - Yellow) -->
-                  <g class="map-uno-card" data-pin="2" transform="translate(652, 411)">
-                    <rect class="card-hitbox" x="-20" y="-28" width="40" height="56" fill="transparent" pointer-events="all"/>
-                    <rect class="card-halo" x="-17" y="-24" width="34" height="48" rx="6" pointer-events="none"/>
-                    <g class="card-body" pointer-events="none">
-                      <rect x="-14" y="-20" width="28" height="40" rx="4" fill="#f7b801" stroke="#150903" stroke-width="2"/>
-                      <ellipse cx="0" cy="0" rx="8" ry="12.5" fill="#ffffff" transform="rotate(-25)"/>
-                      <text x="0" y="0.5" fill="#111111" font-family="'JetBrains Mono', 'Arial Black', Impact, sans-serif" font-weight="900" font-size="15" text-anchor="middle" dominant-baseline="central">3</text>
-                    </g>
-                  </g>
-
-                  <!-- Stop 4: Hogarths (Card 4 - Green) -->
-                  <g class="map-uno-card" data-pin="3" transform="translate(860, 386)">
-                    <rect class="card-hitbox" x="-20" y="-28" width="40" height="56" fill="transparent" pointer-events="all"/>
-                    <rect class="card-halo" x="-17" y="-24" width="34" height="48" rx="6" pointer-events="none"/>
-                    <g class="card-body" pointer-events="none">
-                      <rect x="-14" y="-20" width="28" height="40" rx="4" fill="#2b9348" stroke="#150903" stroke-width="2"/>
-                      <ellipse cx="0" cy="0" rx="8" ry="12.5" fill="#ffffff" transform="rotate(-25)"/>
-                      <text x="0" y="0.5" fill="#111111" font-family="'JetBrains Mono', 'Arial Black', Impact, sans-serif" font-weight="900" font-size="15" text-anchor="middle" dominant-baseline="central">4</text>
-                    </g>
-                  </g>
-
-                  <!-- Stop 5: The Twelve Tellers (Card 5 - Red) -->
-                  <g class="map-uno-card" data-pin="4" transform="translate(918, 287)">
-                    <rect class="card-hitbox" x="-20" y="-28" width="40" height="56" fill="transparent" pointer-events="all"/>
-                    <rect class="card-halo" x="-17" y="-24" width="34" height="48" rx="6" pointer-events="none"/>
-                    <g class="card-body" pointer-events="none">
-                      <rect x="-14" y="-20" width="28" height="40" rx="4" fill="#d62828" stroke="#150903" stroke-width="2"/>
-                      <ellipse cx="0" cy="0" rx="8" ry="12.5" fill="#ffffff" transform="rotate(-25)"/>
-                      <text x="0" y="0.5" fill="#111111" font-family="'JetBrains Mono', 'Arial Black', Impact, sans-serif" font-weight="900" font-size="15" text-anchor="middle" dominant-baseline="central">5</text>
-                    </g>
-                  </g>
-
-                  <!-- Stop 6: Kuckoo (Card 6 - Blue) -->
-                  <g class="map-uno-card" data-pin="5" transform="translate(641, 316)">
-                    <rect class="card-hitbox" x="-20" y="-28" width="40" height="56" fill="transparent" pointer-events="all"/>
-                    <rect class="card-halo" x="-17" y="-24" width="34" height="48" rx="6" pointer-events="none"/>
-                    <g class="card-body" pointer-events="none">
-                      <rect x="-14" y="-20" width="28" height="40" rx="4" fill="#1d63b8" stroke="#150903" stroke-width="2"/>
-                      <ellipse cx="0" cy="0" rx="8" ry="12.5" fill="#ffffff" transform="rotate(-25)"/>
-                      <text x="0" y="0.5" fill="#111111" font-family="'JetBrains Mono', 'Arial Black', Impact, sans-serif" font-weight="900" font-size="15" text-anchor="middle" dominant-baseline="central">6</text>
-                    </g>
-                  </g>
-
-                  <!-- Stop 7: Molly O'Malleys (Card 7 - Yellow) -->
-                  <g class="map-uno-card" data-pin="6" transform="translate(403, 276)">
-                    <rect class="card-hitbox" x="-20" y="-28" width="40" height="56" fill="transparent" pointer-events="all"/>
-                    <rect class="card-halo" x="-17" y="-24" width="34" height="48" rx="6" pointer-events="none"/>
-                    <g class="card-body" pointer-events="none">
-                      <rect x="-14" y="-20" width="28" height="40" rx="4" fill="#f7b801" stroke="#150903" stroke-width="2"/>
-                      <ellipse cx="0" cy="0" rx="8" ry="12.5" fill="#ffffff" transform="rotate(-25)"/>
-                      <text x="0" y="0.5" fill="#111111" font-family="'JetBrains Mono', 'Arial Black', Impact, sans-serif" font-weight="900" font-size="15" text-anchor="middle" dominant-baseline="central">7</text>
-                    </g>
-                  </g>
-
-                  <!-- Stop 8: The Adelphi (Card 8 - Green) -->
-                  <g class="map-uno-card" data-pin="7" transform="translate(576, 177)">
-                    <rect class="card-hitbox" x="-20" y="-28" width="40" height="56" fill="transparent" pointer-events="all"/>
-                    <rect class="card-halo" x="-17" y="-24" width="34" height="48" rx="6" pointer-events="none"/>
-                    <g class="card-body" pointer-events="none">
-                      <rect x="-14" y="-20" width="28" height="40" rx="4" fill="#2b9348" stroke="#150903" stroke-width="2"/>
-                      <ellipse cx="0" cy="0" rx="8" ry="12.5" fill="#ffffff" transform="rotate(-25)"/>
-                      <text x="0" y="0.5" fill="#111111" font-family="'JetBrains Mono', 'Arial Black', Impact, sans-serif" font-weight="900" font-size="15" text-anchor="middle" dominant-baseline="central">8</text>
-                    </g>
-                  </g>
-
-                  <!-- Stop 9: The Ferret (Card 9 - Red) -->
-                  <g class="map-uno-card" data-pin="8" transform="translate(471, 72)">
-                    <rect class="card-hitbox" x="-20" y="-28" width="40" height="56" fill="transparent" pointer-events="all"/>
-                    <rect class="card-halo" x="-17" y="-24" width="34" height="48" rx="6" pointer-events="none"/>
-                    <g class="card-body" pointer-events="none">
-                      <rect x="-14" y="-20" width="28" height="40" rx="4" fill="#d62828" stroke="#150903" stroke-width="2"/>
-                      <ellipse cx="0" cy="0" rx="8" ry="12.5" fill="#ffffff" transform="rotate(-25)"/>
-                      <text x="0" y="0.5" fill="#111111" font-family="'JetBrains Mono', 'Arial Black', Impact, sans-serif" font-weight="900" font-size="15" text-anchor="middle" dominant-baseline="central">9</text>
-                    </g>
-                  </g>
-
-                  <!-- Stop 10: Ships & Giggles / Popworld (Card 10 - Wild Gold/Black) -->
-                  <g class="map-uno-card" data-pin="9" transform="translate(334, 172)">
-                    <rect class="card-hitbox" x="-20" y="-28" width="40" height="56" fill="transparent" pointer-events="all"/>
-                    <rect class="card-halo" x="-18" y="-25" width="36" height="50" rx="7" pointer-events="none"/>
-                    <g class="card-body" pointer-events="none">
-                      <rect x="-15" y="-21" width="30" height="42" rx="5" fill="#181818" stroke="#dfb74c" stroke-width="2.5"/>
-                      <ellipse cx="0" cy="0" rx="8.5" ry="13" fill="#ffffff" transform="rotate(-25)"/>
-                      <text x="0" y="0.5" fill="#111111" font-family="'JetBrains Mono', 'Arial Black', Impact, sans-serif" font-weight="900" font-size="12" text-anchor="middle" dominant-baseline="central">10</text>
-                    </g>
-                  </g>
-                </svg>
-              </div>
-            </div>
-
-            <!-- 10 Stops Checklist & Live Navigation -->
-            <h3 style="font-family: var(--font-uno); font-size: 1.5rem; margin-top: 4px;">
-              📍 PUB STOPS 
-            </h3>
-            <div class="stops-grid" id="stopsGrid"></div>
-
-          </div>
-        </section>
-
-
-        <!-- ===================================================================
-             TAB 4: UNO CARD CODEX (SIMPLIFIED & VISUAL RULES)
+             TAB 3: UNO CARD CODEX (SIMPLIFIED & VISUAL RULES)
              =================================================================== -->
         <section id="tab-rules" class="tab-panel">
           <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 8px;">
@@ -5570,24 +5425,24 @@
               </h3>
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-top: 8px;">
                 <div style="background: rgba(0,0,0,0.35); border-left: 3px solid #38bdf8; border-radius: 6px; padding: 8px 10px;">
-                  <strong style="color: #7dd3fc; font-size: 0.92rem; display: block;">1. Starting Deal & 15 Points</strong>
-                  <span style="font-size: 0.82rem; color: #cbd5e1;">Each player starts with <strong>4 cards</strong> (8 cards per team) and each team begins with <strong>15 Points</strong>! Play 1 matching card per turn to attack rivals.</span>
+                  <strong style="color: #7dd3fc; font-size: 0.92rem; display: block;">1. Starting Deal &amp; Party Scoring</strong>
+                  <span style="font-size: 0.82rem; color: #cbd5e1;">Each player starts with <strong>4 cards</strong> (8 cards per team). Play 1 matching card per turn to attack rival crews and score points!</span>
                 </div>
                 <div style="background: rgba(0,0,0,0.35); border-left: 3px solid #ef4444; border-radius: 6px; padding: 8px 10px;">
-                  <strong style="color: #fca5a5; font-size: 0.92rem; display: block;">2. Penalties & UNO Shouts</strong>
-                  <span style="font-size: 0.82rem; color: #cbd5e1;">Draw cards and drinking penalties resolve instantly. If you hold only 1 card, you MUST shout UNO! Forgetting to say UNO is a -2 point penalty & 2 sips!</span>
+                  <strong style="color: #fca5a5; font-size: 0.92rem; display: block;">2. Penalties &amp; UNO Shouts</strong>
+                  <span style="font-size: 0.82rem; color: #cbd5e1;">Draw cards and drinking penalties resolve instantly. If you hold only 1 card, you MUST shout UNO! Forgetting to say UNO is a -2 point penalty &amp; 2 sips!</span>
                 </div>
                 <div style="background: rgba(0,0,0,0.35); border-left: 3px solid #facc15; border-radius: 6px; padding: 8px 10px;">
                   <strong style="color: #fde047; font-size: 0.92rem; display: block;">3. 7 Wild Heists</strong>
                   <span style="font-size: 0.82rem; color: #cbd5e1;">Playing a 7 allows you to forcefully steal 1 Wild card from whichever crew matches that color (+1 Atk / -1 Def)!</span>
                 </div>
                 <div style="background: rgba(0,0,0,0.35); border-left: 3px solid #eab308; border-radius: 6px; padding: 8px 10px;">
-                  <strong style="color: #fef08a; font-size: 0.92rem; display: block;">4. Pub Crowns (+10 Pts Repeatable)</strong>
-                  <span style="font-size: 0.82rem; color: #cbd5e1;">Winning the Uno round at any of the 10 pubs awards your crew +1 Crown 👑 and +10 Points (repeatable up to 10 crowns, max +100 pts)!</span>
+                  <strong style="color: #fef08a; font-size: 0.92rem; display: block;">4. Wheel of Doom &amp; Feats</strong>
+                  <span style="font-size: 0.82rem; color: #cbd5e1;">Spin the 8-segment Wheel of Doom or complete Party Bingo feats to earn bonus points and assign drink penalties to rivals!</span>
                 </div>
                 <div style="background: rgba(0,0,0,0.35); border-left: 3px solid #f43f5e; border-radius: 6px; padding: 8px 10px;">
-                  <strong style="color: #fda4af; font-size: 0.92rem; display: block;">5. Last Place (4th) Mystery Shot</strong>
-                  <span style="font-size: 0.82rem; color: #cbd5e1;">If your team comes in <strong>last place (4th)</strong> at the end of each pub, your team MUST do a <strong>Mystery Shot chosen by the other 3 teams</strong>!</span>
+                  <strong style="color: #fda4af; font-size: 0.92rem; display: block;">5. Victory &amp; Loser Forfeit</strong>
+                  <span style="font-size: 0.82rem; color: #cbd5e1;">The crew with the most points at the end is crowned Champions! The losing team (4th) must do the celebratory forfeit drink chosen by the winners!</span>
                 </div>
               </div>
             </div>
@@ -5615,9 +5470,9 @@
           <div class="bingo-panel">
 
             <div class="bingo-header-card">
-              <h2>🎯 PRESTON PUB CRAWL BINGO</h2>
+              <h2>🎯 DRUNK UNO PARTY BINGO &amp; FEATS</h2>
               <p style="font-style: italic; font-size: 0.95rem; color: #cbd5e1; margin-top: 4px;">
-                Open to all Crawlers! Spot penalties (-pts) or achieve bonus feats (+pts) to shift the scoreboard in real-time!
+                Open to all players! Spot penalties (-pts) or achieve bonus feats (+pts) to shift the scoreboard in real-time!
               </p>
             </div>
 
@@ -5800,18 +5655,6 @@
               </div>
             </div>
 
-            <!-- CONTROLLER 0B: PUB STOP WINNERS & CROWNS (10 PUBS • UP TO 10 CROWNS) -->
-            <div class="admin-card glass-card" style="border: 2px solid #eab308; box-shadow: 0 0 20px rgba(234, 179, 8, 0.2);">
-              <div class="admin-card-head">
-                <span class="admin-badge" style="background: #d97706;">👑 PUB CROWNS</span>
-                <h3 style="color: #ffffff;">PUB STOP WINNERS & TEAM CROWNS (UP TO 10):</h3>
-              </div>
-              <p style="font-size: 0.88rem; color: #cbd5e1; margin-bottom: 12px;">
-                Select the winning team for each of the 10 pubs. Each stop won awards +1 Crown 👑 and +10 Points to that team (repeatable up to 10 crowns).
-              </p>
-              <div id="adminPubWinnersList" style="display: flex; flex-direction: column; gap: 8px;"></div>
-            </div>
-
             <!-- CONTROLLER: SECRET BINGO CARDS (ADMIN APPLIED) -->
             <div class="admin-card">
               <div class="admin-card-head">
@@ -5819,43 +5662,34 @@
                 <h3 style="color: #ffffff;">SECRET BINGO CARDS (ADMIN VERIFIED):</h3>
               </div>
               <p style="font-size: 0.88rem; color: #cbd5e1; margin-bottom: 12px;">
-                Crawl Master 1-tap actions to verify and award hidden secret bingo cards across teams:
+                Party Host 1-tap actions to verify and award hidden secret bingo cards across teams:
               </p>
               <div id="adminSecretBingoList" style="display: flex; flex-direction: column; gap: 8px;"></div>
             </div>
 
-            <!-- CONTROLLER 1: ACTIVE PUB LOCATION -->
-            <div class="admin-card">
+            <!-- CONTROLLER: ROOM & SESSION MANAGEMENT (RESET SCORES, PURGE ROOM, CHANGE PASSCODE) -->
+            <div class="admin-card glass-card" style="border: 2px solid #ef4444; box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);">
               <div class="admin-card-head">
-                <span class="admin-badge">📍 STEP 1</span>
-                <h3>SET CURRENT PUB LOCATION (SYNCS ACROSS ALL PHONES):</h3>
+                <span class="admin-badge" style="background: #991b1b;">⚙️ ROOM MANAGEMENT</span>
+                <h3 style="color: #ffffff;">ROOM CONTROLS &amp; EMERGENCY RESETS:</h3>
               </div>
-              <p style="font-size: 0.88rem; color: var(--ink-faded); margin-bottom: 10px;">
-                Tap any stop to select it as the crawl's active pub, then hit Broadcast to push the change to everyone's phone:
+              <p style="font-size: 0.88rem; color: #cbd5e1; margin-bottom: 12px;">
+                Reset scores without kicking players, change room admin passcode, or permanently delete room:
               </p>
-              <div class="admin-pub-grid" id="adminPubGrid"></div>
-              <div style="margin-top: 14px;">
-                <button type="button" class="modal-btn" id="adminBroadcastPubBtn" style="background: #2b9348; font-size: 1.2rem; padding: 12px 20px; width: 100%;">
-                  📍 BROADCAST ACTIVE PUB TO ALL PHONES
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                <button type="button" class="modal-btn" id="adminResetScoresBtn" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%); border: 1.5px solid #facc15; color: #fff; font-weight: 700; padding: 10px 14px;">
+                  🔄 Reset Scores to 0
+                </button>
+                <button type="button" class="modal-btn" id="adminDeleteRoomBtn" style="background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%); border: 1.5px solid #f87171; color: #fff; font-weight: 700; padding: 10px 14px;">
+                  🗑️ Delete &amp; Close Room
                 </button>
               </div>
-            </div>
-
-            <!-- CONTROLLER 2: QUICK EMERGENCY RESET -->
-            <div class="admin-card" style="border-color: #8d0801;">
-              <div class="admin-card-head">
-                <span class="admin-badge" style="background: #8d0801;">⚠️ RESET</span>
-                <h3>SESSION & SCORES RESET:</h3>
-              </div>
-              <p style="font-size: 0.88rem; color: var(--ink-faded); margin-bottom: 10px;">
-                Broadcast emergency score reset or fresh crawl state:
-              </p>
-              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <button type="button" class="modal-btn" id="adminResetScoresBtn" style="background: #d97706; font-size: 1rem; padding: 10px 16px;">
-                  🔄 Reset All Scores to 15 pts
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button type="button" class="modal-btn secondary" id="adminChangePasscodeBtn" style="border-color: #38bdf8; color: #7dd3fc; font-size: 0.86rem; padding: 8px 12px;">
+                  🔑 Change Admin Code
                 </button>
-                <button type="button" class="modal-btn" id="adminLockConsoleBtn" style="background: #374151; font-size: 1rem; padding: 10px 16px;">
-                  🔒 Lock Admin Console
+                <button type="button" class="modal-btn secondary" id="adminLockConsoleBtn" style="border-color: #94a3b8; color: #cbd5e1; font-size: 0.86rem; padding: 8px 12px;">
+                  🔒 Lock Console
                 </button>
               </div>
             </div>
@@ -5893,17 +5727,17 @@
         <span class="dock-icon">🎡</span>
         <span class="dock-label">Wheel</span>
       </button>
-      <button type="button" class="dock-tab" data-tab="map" title="Pub Route & Map">
-        <span class="dock-icon">🗺️</span>
-        <span class="dock-label">Route</span>
+      <button type="button" class="dock-tab" data-tab="bingo" title="Party Bingo & Feats">
+        <span class="dock-icon">🎯</span>
+        <span class="dock-label">Bingo</span>
       </button>
       <button type="button" class="dock-tab" data-tab="rules" title="Uno Codex & Rules">
         <span class="dock-icon">📜</span>
         <span class="dock-label">Rules</span>
       </button>
-      <button type="button" class="dock-tab" data-tab="bingo" title="Secret Pub Crawl Bingo">
-        <span class="dock-icon">🎯</span>
-        <span class="dock-label">Bingo</span>
+      <button type="button" class="dock-tab" data-tab="admin" id="openAdminTabBtn" title="Host & Room Admin Console">
+        <span class="dock-icon">👑</span>
+        <span class="dock-label">Admin</span>
       </button>
     </div>
   </nav>
@@ -6045,7 +5879,7 @@
       <div id="gatewayJoinPane">
         <div style="margin-bottom: 14px;">
           <label style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; font-weight: 700; color: #e2e8f0; display: block; margin-bottom: 6px;">ENTER ROOM CODE:</label>
-          <input type="text" id="gatewayJoinCodeInput" class="glass-input" placeholder="e.g. PRESTON, CRAWL-42, BEER99" style="width: 100%; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 800; text-transform: uppercase; text-align: center; letter-spacing: 0.1em; background: rgba(10, 14, 20, 0.9) !important; color: #ffd166 !important; border: 2px solid var(--theme-border, #d8a86a) !important; border-radius: 8px;" />
+          <input type="text" id="gatewayJoinCodeInput" class="glass-input" placeholder="e.g. PARTY-1, UNO-BRAWL, FRIDAY" style="width: 100%; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 800; text-transform: uppercase; text-align: center; letter-spacing: 0.1em; background: rgba(10, 14, 20, 0.9) !important; color: #ffd166 !important; border: 2px solid var(--theme-border, #d8a86a) !important; border-radius: 8px;" />
           <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 5px;">Ask your Crawl Master or group leader for their room code.</div>
         </div>
         <button type="button" class="modal-btn" id="gatewayJoinSubmitBtn" style="width: 100%; font-size: 1.15rem; font-weight: 800; padding: 13px; background: linear-gradient(135deg, #15803d 0%, #166534 100%); border: 1.5px solid #4ade80;">
@@ -6106,7 +5940,7 @@
       </p>
       <div style="margin-bottom: 12px; background: rgba(0,0,0,0.35); border: 1.5px solid rgba(255,255,255,0.18); border-radius: 10px; padding: 12px; text-align: center;">
         <div style="font-size: 0.74rem; color: #94a3b8; margin-bottom: 2px; text-transform: uppercase;">ACTIVE ROOM CODE:</div>
-        <div id="syncActiveRoomDisplay" style="font-size: 1.6rem; font-family: 'JetBrains Mono', monospace; font-weight: 900; color: #ffd166; letter-spacing: 0.08em;">PRESTON</div>
+        <div id="syncActiveRoomDisplay" style="font-size: 1.6rem; font-family: 'JetBrains Mono', monospace; font-weight: 900; color: #ffd166; letter-spacing: 0.08em;">SELECT ROOM</div>
         <div id="syncActiveModeDisplay" style="font-size: 0.76rem; color: #86efac; margin-top: 4px; font-weight: 700;">⚡ LIVE PARTY SYNC MODE</div>
         <div id="syncAutoDeleteInfo" style="font-size: 0.72rem; color: #94a3b8; margin-top: 5px; font-family: 'JetBrains Mono', monospace;">⏳ Auto-deletes after 30m inactivity or upon completion</div>
       </div>
@@ -6126,18 +5960,6 @@
   </div>
 
 
-  <!-- =========================================================================
-       MODAL 5: MAP FULLSCREEN LIGHTBOX
-       ========================================================================= -->
-  <div class="modal-backdrop" id="mapLightbox" style="padding: 10px;">
-    <div class="modal-scroll" style="max-width: 95vw; width: 950px; padding: 12px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <h3 style="font-family: var(--font-uno); font-size: 1.4rem; margin: 0;">🗺️ THE PRESTON ROUTE MAP</h3>
-        <button type="button" class="btn-stop-check" id="closeMapLightboxBtn">✕ Close</button>
-      </div>
-      <img src="assets/map.png" alt="Preston Route Map full view" style="width: 100%; height: auto; border: 2px solid var(--ink); border-radius: 8px;" />
-    </div>
-  </div>
 
 
   <!-- =========================================================================
@@ -6277,7 +6099,7 @@
         </p>
         <div style="display: flex; flex-direction: column; gap: 6px;">
           <button type="button" class="modal-btn secondary" id="confirmResetScoresBtn" style="font-size: 0.88rem; padding: 8px 12px;">
-            🔄 Reset Scores to 15 pts Only
+            🔄 Reset Scores to 0 pts
           </button>
           <button type="button" class="modal-btn" id="confirmFactoryResetBtn" style="background: #8b1e1e; border-color: #ff4d4d; font-size: 0.88rem; padding: 8px 12px;">
             🚨 Full Factory Reset (Wipe All Cookies & State)
@@ -6371,7 +6193,7 @@
         VICTORY CELEBRATION!
       </h2>
       <p style="font-size: 0.88rem; color: #cbd5e1; margin-bottom: 14px;">
-        The Preston Uno Crawl has officially concluded! Here are the final podium standings:
+        The Drunk Uno game has officially concluded! Here are the final podium standings:
       </p>
 
       <!-- 1st Place Highlight Card -->
@@ -6455,7 +6277,7 @@
       
       <div style="text-align: center; margin-bottom: 14px;">
         <img src="assets/drunk-uno-logo.png" alt="Drunk Uno Logo" style="width: 72px; height: 72px; border-radius: 18px; margin: 0 auto 10px auto; display: block; box-shadow: 0 10px 28px rgba(0,0,0,0.65), 0 0 20px rgba(239, 68, 68, 0.4); border: 2px solid rgba(255,255,255,0.25);" />
-        <span class="impact-pill special" id="setupRoomPill" style="font-size: 0.82rem; padding: 4px 12px; letter-spacing: 0.5px;">⚔️ ROOM: PRESTON</span>
+        <span class="impact-pill special" id="setupRoomPill" style="font-size: 0.82rem; padding: 4px 12px; letter-spacing: 0.5px;">⚔️ ROOM: LOBBY</span>
         <h2 class="modal-title" id="setupGuideMainTitle" style="margin-top: 8px; font-size: 1.95rem; color: #ffffff !important; text-shadow: 0 2px 8px rgba(0,0,0,0.8);">
           WELCOME TO DRUNK UNO
         </h2>
@@ -6478,12 +6300,12 @@
             <span>WELCOME TO DRUNK UNO:</span>
           </div>
           <p style="font-size: 0.88rem; color: #cbd5e1; margin-bottom: 12px; line-height: 1.45;">
-            Welcome to the <strong>Preston Route 10-Pub Crawl</strong>! Classic Uno rules meet a real-time multiplayer pub brawl.
+            Welcome to <strong>Drunk Uno</strong>! Classic Uno rules meet real-time multiplayer smartphone party synchronization.
           </p>
           <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.82rem; color: #e2e8f0; margin-bottom: 8px;">
             <div style="background: rgba(0,0,0,0.35); padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); display: flex; gap: 8px; align-items: center;">
               <span style="font-size: 1.3rem;">🎴</span>
-              <span><strong>4 Rival Crews:</strong> Red, Blue, Green, and Yellow battle for pub domination across 10 venues.</span>
+              <span><strong>4 Rival Crews:</strong> Red, Blue, Green, and Yellow battle for party domination.</span>
             </div>
             <div style="background: rgba(0,0,0,0.35); padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); display: flex; gap: 8px; align-items: center;">
               <span style="font-size: 1.3rem;">📡</span>
@@ -6491,7 +6313,7 @@
             </div>
             <div style="background: rgba(0,0,0,0.35); padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); display: flex; gap: 8px; align-items: center;">
               <span style="font-size: 1.3rem;">🍺</span>
-              <span><strong>15 Starting Points:</strong> Maintain your points by hitting rival teams with card penalties. Lowest points drinks the punishment at the finish line!</span>
+              <span><strong>Rack Up Points:</strong> Maintain your score by hitting rival teams with card penalties. Lowest score drinks the punishment!</span>
             </div>
           </div>
         </div>
@@ -6956,7 +6778,7 @@
       // --- 01. STATE & COOKIE PERSISTENCE CONFIGURATION ---
       const COOKIE_KEY = "drunk_uno_game_state";
       const ADMIN_PASSCODE = "22140711";
-      const BASE_PROJECT_URL = "https://leeprky.github.io/projects/drunk-uno/";
+      const BASE_PROJECT_URL = window.location.origin + window.location.pathname.replace(/\/+$/, '') + '/';
 
       function setCookie(name, value, days = 30) {
         const d = new Date();
@@ -6974,7 +6796,7 @@
       }
 
       function getRoomStorageKey(code) {
-        const c = (code || roomCode || "PRESTON-2026").toUpperCase().trim().replace(/[^A-Z0-9_-]/g, "");
+        const c = (code || roomCode || "GLOBAL").toUpperCase().trim().replace(/[^A-Z0-9_-]/g, "");
         return `drunk_uno_state_${c || "DEFAULT"}`;
       }
 
@@ -7029,125 +6851,13 @@
       }
 
       const DEFAULT_TEAMS = [
-        { id: 0, key: "RED", name: "Team Red", colorClass: "red", score: 15, sips: 0, stash: 0, crowns: 0, frozen: false, targetIdx: 1, targetName: "Team Blue", players: [], captain: "" },
-        { id: 1, key: "BLUE", name: "Team Blue", colorClass: "blue", score: 15, sips: 0, stash: 0, crowns: 0, frozen: false, targetIdx: 2, targetName: "Team Green", players: [], captain: "" },
-        { id: 2, key: "GREEN", name: "Team Green", colorClass: "green", score: 15, sips: 0, stash: 0, crowns: 0, frozen: false, targetIdx: 3, targetName: "Team Yellow", players: [], captain: "" },
-        { id: 3, key: "YELLOW", name: "Team Yellow", colorClass: "yellow", score: 15, sips: 0, stash: 0, crowns: 0, frozen: false, targetIdx: 0, targetName: "Team Red", players: [], captain: "" }
+        { id: 0, key: "RED", name: "Team Red", colorClass: "red", score: 0, sips: 0, stash: 0, crowns: 0, frozen: false, targetIdx: 1, targetName: "Team Blue", players: [], captain: "" },
+        { id: 1, key: "BLUE", name: "Team Blue", colorClass: "blue", score: 0, sips: 0, stash: 0, crowns: 0, frozen: false, targetIdx: 2, targetName: "Team Green", players: [], captain: "" },
+        { id: 2, key: "GREEN", name: "Team Green", colorClass: "green", score: 0, sips: 0, stash: 0, crowns: 0, frozen: false, targetIdx: 3, targetName: "Team Yellow", players: [], captain: "" },
+        { id: 3, key: "YELLOW", name: "Team Yellow", colorClass: "yellow", score: 0, sips: 0, stash: 0, crowns: 0, frozen: false, targetIdx: 0, targetName: "Team Red", players: [], captain: "" }
       ];
 
-      // Exact 10 Stops sequence matching the route & cards on assets/map.png
-      const DEFAULT_STOPS = [
-        {
-          num: 1,
-          name: "The Station",
-          color: "#d62828",
-          colorName: "RED CARD 1",
-          rule: "Left hand drinking only — 1 sip penalty",
-          vibe: "Historic Victorian railway tavern right outside Preston Station. The official starting line of the crawl!",
-          challenge: "First pint down using only your left hand or take 2 penalty sips!",
-          mapsUrl: "https://maps.google.com/?q=The+Station+Pub+Preston",
-          visited: true
-        },
-        {
-          num: 2,
-          name: "All Hopes No Promises",
-          color: "#1d63b8",
-          colorName: "BLUE CARD 2",
-          rule: "No pointing with fingers — 1 sip penalty",
-          vibe: "Moody, neon-lit cocktail and craft bar on Guildhall St with electric pub crawl energy.",
-          challenge: "No pointing permitted! Anyone caught pointing must immediately down 2 sips!",
-          mapsUrl: "https://maps.google.com/?q=All+Hopes+No+Promises+Preston",
-          visited: false
-        },
-        {
-          num: 3,
-          name: "Wings & Beer Co",
-          color: "#f7b801",
-          colorName: "YELLOW CARD 3",
-          rule: "Thumb master active (last thumb drinks)",
-          vibe: "Craft beer and sports den on Cannon St famous for buffalo wings and craft IPA taps.",
-          challenge: "Whenever your captain places a thumb on the table, the last crawler to react takes 2 sips!",
-          mapsUrl: "https://maps.google.com/?q=Wings+and+Beer+Co+Preston",
-          visited: false
-        },
-        {
-          num: 4,
-          name: "Hogarths",
-          color: "#2b9348",
-          colorName: "GREEN CARD 4",
-          rule: "Pinky out while sipping",
-          vibe: "Victorian gin palace on Church St featuring over 120 varieties of gin and live screens.",
-          challenge: "Pinky finger must be held high in the air while taking any sip or gulp!",
-          mapsUrl: "https://maps.google.com/?q=Hogarths+Preston",
-          visited: false
-        },
-        {
-          num: 5,
-          name: "The Twelve Tellers",
-          color: "#d62828",
-          colorName: "RED CARD 5",
-          rule: "No using first names; call players by team color",
-          vibe: "Preston's grand former bank Wetherspoons on Church St with towering ornate ceilings & cheap pitchers.",
-          challenge: "No using anyone's real first name; refer to teammates and rivals strictly by team colors!",
-          mapsUrl: "https://maps.google.com/?q=The+Twelve+Tellers+Preston",
-          visited: false
-        },
-        {
-          num: 6,
-          name: "Kuckoo",
-          color: "#1d63b8",
-          colorName: "BLUE CARD 6",
-          rule: "High five the bartender or take a sip",
-          vibe: "Preston's indie rock 'n' roll cocktail den on Fox St with bartenders rocking the bar tops.",
-          challenge: "High-five the bartender or down a flaming rock shot with your rival captain!",
-          mapsUrl: "https://maps.google.com/?q=Kuckoo+Preston",
-          visited: false
-        },
-        {
-          num: 7,
-          name: "Molly O'Malleys",
-          color: "#f7b801",
-          colorName: "YELLOW CARD 7",
-          rule: "Must speak in an Irish accent or drink 2 sips",
-          vibe: "Lively Irish tavern on Church St with live folk music, cold Guinness, and energetic crowds.",
-          challenge: "Must order all drinks in an Irish accent or take 2 penalty sips!",
-          mapsUrl: "https://maps.google.com/?q=Molly+OMalleys+Preston",
-          visited: false
-        },
-        {
-          num: 8,
-          name: "The Adelphi",
-          color: "#2b9348",
-          colorName: "GREEN CARD 8",
-          rule: "Say 'Cheers Captain' before each sip",
-          vibe: "Preston's legendary student institution on Fylde Rd outside UCLan campus.",
-          challenge: "Every team member must toast 'Cheers Captain!' before touching their drink!",
-          mapsUrl: "https://maps.google.com/?q=The+Adelphi+Preston",
-          visited: false
-        },
-        {
-          num: 9,
-          name: "The Ferret",
-          color: "#d62828",
-          colorName: "RED CARD 9",
-          rule: "No saying 'Drink' or 'Sip' — say 'Hydrate'",
-          vibe: "Beloved indie music sanctuary on Fylde Rd with legendary terrace and craft ciders.",
-          challenge: "The words 'Drink' and 'Sip' are strictly forbidden — say 'Hydrate' or suffer a penalty sip!",
-          mapsUrl: "https://maps.google.com/?q=The+Ferret+Preston",
-          visited: false
-        },
-        {
-          num: 10,
-          name: "Ships & Giggles / Popworld",
-          color: "#dfb74c",
-          colorName: "GOLD WILD CARD 10",
-          rule: "Winner assigns 10 sips to losing teams!",
-          vibe: "The ultimate pub crawl finish line! Cheesy party bangers, light-up dancefloors & victory podium shots!",
-          challenge: "The winning Uno team is crowned champions and assigns 10 sips across all losing crews!",
-          mapsUrl: "https://maps.google.com/?q=Popworld+Preston",
-          visited: false
-        }
-      ];
+      const DEFAULT_STOPS = [];
 
       const BINGO_CARDS = [
         // --- 1. POSITIVE / FEAT CARDS (ONCE) ---
@@ -7295,7 +7005,7 @@
         }
       ];
 
-      // Get Room Code from URL query param (e.g. ?room=PRESTON-2026) or saved room in localStorage
+      // Get Room Code from URL query param (e.g. ?room=PARTY-1) or saved room in localStorage
       const urlParams = new URLSearchParams(window.location.search);
       let roomCode = (urlParams.get("room") || localStorage.getItem("drunk_uno_room_code") || "").toUpperCase().trim().replace(/[^A-Z0-9_-]/g, "");
       let needsRoomGateway = !roomCode;
@@ -7581,13 +7291,6 @@
         if (!raw) {
           try { raw = localStorage.getItem(storageKey); } catch (e) {}
         }
-        // Fallback for default room legacy key
-        if (!raw && roomCode === "PRESTON-2026") {
-          raw = getCookie("drunk_uno_game_state");
-          if (!raw) {
-            try { raw = localStorage.getItem("drunk_uno_game_state"); } catch (e) {}
-          }
-        }
         if (raw) {
           try {
             const parsed = JSON.parse(raw);
@@ -7607,9 +7310,6 @@
                 if (!Array.isArray(t.players)) t.players = [];
                 if (!t.captain) t.captain = "";
               });
-              if (!parsed.gameStarted && state.teams.every(t => t.score === 12)) {
-                state.teams.forEach(t => t.score = 15);
-              }
               if (parsed.stops) state.stops = parsed.stops;
               if (parsed.currentStopIdx !== undefined) state.currentStopIdx = parsed.currentStopIdx;
               if (parsed.currentTurnIdx !== undefined) state.currentTurnIdx = parsed.currentTurnIdx;
@@ -8145,7 +7845,7 @@
         } catch (e) {}
 
         if (reload) {
-          window.location.href = window.location.origin + window.location.pathname + (roomCode !== "PRESTON-2026" ? `?room=${roomCode}` : "");
+          window.location.href = window.location.origin + window.location.pathname + (roomCode ? `?room=${roomCode}` : "");
         }
       }
 
@@ -8220,10 +7920,10 @@
 
         try { sessionStorage.clear(); } catch(e) {}
 
-        // 2. Reset state object to clean starting crawl values (15 pts)
+        // 2. Reset state object to clean starting values (0 pts)
         state.teams = JSON.parse(JSON.stringify(DEFAULT_TEAMS));
         state.teams.forEach(t => {
-          t.score = 15;
+          t.score = 0;
           t.sips = 0;
           t.stash = 0;
           t.crowns = 0;
@@ -8487,6 +8187,8 @@
         openRoomGatewayModal();
       }
 
+      let hasReceivedBrokerState = false;
+
       function applyIncomingState(incoming) {
         if (!incoming || !Array.isArray(incoming.teams)) return;
 
@@ -8499,26 +8201,26 @@
           setTimeout(() => { executeAutoRoomDeletion(isInactive ? "30 minutes of inactivity" : "game completed"); }, 50);
           return;
         }
+
         const incomingResetEpoch = incoming.resetEpoch || 0;
-        const localResetEpoch = state.resetEpoch || parseInt(localStorage.getItem("drunk_uno_reset_epoch") || "0", 10);
-        if (incomingResetEpoch < localResetEpoch) {
-          console.warn("Discarded outdated incoming state older than local reset epoch.");
-          return;
+        const localResetEpoch = state.resetEpoch || 0;
+
+        if (!hasReceivedBrokerState) {
+          // First state message from broker is authoritative for this session
+          hasReceivedBrokerState = true;
+        } else {
+          if (incomingResetEpoch < localResetEpoch) {
+            return;
+          }
+          const incTime = incoming.updatedAt || 0;
+          const locTime = state.updatedAt || 0;
+          if (incomingResetEpoch === localResetEpoch && incTime < locTime) {
+            return;
+          }
         }
 
         const incVer = incoming.version || 0;
         const locVer = state.version || 0;
-        if (incomingResetEpoch === localResetEpoch && incVer < locVer) {
-          console.warn(`Ignored older state (inc v${incVer} < loc v${locVer}). Local is authoritative.`);
-          // Broadcast our newer state to bring out-of-date peers up to speed
-          if (mqttClient && mqttClient.isConnected()) {
-            saveGameState(true);
-          }
-          return;
-        }
-        if (incomingResetEpoch === localResetEpoch && incVer === locVer && (incoming.updatedAt || 0) < (state.updatedAt || 0)) {
-          return;
-        }
 
         state.teams = incoming.teams;
         state.teams.forEach(t => {
@@ -8935,10 +8637,20 @@
         }
       }
 
-      // Automatically reconnect when network transitions from offline to online
-      window.addEventListener("online", () => {
+      // Automatically reconnect when network transitions from offline to online or phone wakes up
+      function handleAppWakeup() {
+        if (!roomCode) return;
         if (!mqttClient || !mqttClient.isConnected()) {
+          hasReceivedBrokerState = false;
           initMqttSync();
+        }
+      }
+
+      window.addEventListener("online", handleAppWakeup);
+      window.addEventListener("focus", handleAppWakeup);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          handleAppWakeup();
         }
       });
 
@@ -10289,7 +10001,7 @@
 
         document.getElementById("pubCardBadge").textContent = `STOP #${stop.num} • ${stop.colorName || 'UNO CARD'}`;
         document.getElementById("pubModalTitle").textContent = `${stop.num}. ${stop.name}`;
-        document.getElementById("pubModalVibe").textContent = stop.vibe || "Official Preston Uno Crawl Stop.";
+        document.getElementById("pubModalVibe").textContent = stop.vibe || "Official Drunk Uno Party Stop.";
         document.getElementById("pubModalRuleText").textContent = `"${stop.rule}"`;
         document.getElementById("pubModalChallenge").textContent = stop.challenge || "Take a drink with your crew!";
         document.getElementById("pubModalDirectionsBtn").href = stop.mapsUrl;
@@ -12198,21 +11910,48 @@
       const adminResetScoresBtn = document.getElementById("adminResetScoresBtn");
       if (adminResetScoresBtn) {
         adminResetScoresBtn.onclick = () => {
-          if (confirm("Reset all team scores to 15 points and clear penalties?")) {
+          if (confirm("Reset all team scores and sips to 0, and clear bingo challenges for this room?")) {
             state.teams.forEach(t => {
-              t.score = 15;
+              t.score = 0;
               t.sips = 0;
               t.stash = 0;
+              t.crowns = 0;
               t.frozen = false;
             });
-            state.bingoCards.forEach(c => c.claimedBy = null);
-            addLog("⚠️ CRAWL MASTER: Emergency score reset applied across all teams (15 pts).");
+            state.bingoCards.forEach(c => { c.claimedBy = null; c.claimCount = 0; });
+            state.gameStarted = false;
+            state.gameEnded = false;
+            state.endedAt = null;
+            state.winnerTeamIdx = null;
+            state.updatedAt = Date.now();
+            addLog("⚠️ CRAWL MASTER: Room scores and drinks reset to 0.");
             saveGameState(true);
             renderCrewBar();
             renderScoringTab();
             renderBingoGrid();
             renderAdminTab();
-            showToast("Scores reset to 15 pts");
+            showToast("Scores reset to 0 pts");
+          }
+        };
+      }
+
+      const adminDeleteRoomBtn = document.getElementById("adminDeleteRoomBtn");
+      if (adminDeleteRoomBtn) {
+        adminDeleteRoomBtn.onclick = () => {
+          if (confirm(`Are you sure you want to permanently delete and close room "${roomCode}" for all players?`)) {
+            executeAutoRoomDeletion("deleted by Crawl Master in Admin Console");
+          }
+        };
+      }
+
+      const adminChangePasscodeBtn = document.getElementById("adminChangePasscodeBtn");
+      if (adminChangePasscodeBtn) {
+        adminChangePasscodeBtn.onclick = () => {
+          const newPass = prompt("Enter new Crawl Master / Host Admin Passcode for this room (min 4 characters):", state.adminPasscode || "");
+          if (newPass && newPass.trim().length >= 4) {
+            state.adminPasscode = newPass.trim();
+            saveGameState(true);
+            showToast("🔑 Room Admin Passcode updated!");
           }
         };
       }
@@ -12883,12 +12622,10 @@
       }
 
       // Map Lightbox
-      document.getElementById("openMapLightboxBtn").onclick = () => {
-        document.getElementById("mapLightbox").classList.add("open");
-      };
-      document.getElementById("closeMapLightboxBtn").onclick = () => {
-        document.getElementById("mapLightbox").classList.remove("open");
-      };
+      const openMapBtn = document.getElementById("openMapLightboxBtn");
+      if (openMapBtn) openMapBtn.onclick = () => document.getElementById("mapLightbox")?.classList.add("open");
+      const closeMapBtn = document.getElementById("closeMapLightboxBtn");
+      if (closeMapBtn) closeMapBtn.onclick = () => document.getElementById("mapLightbox")?.classList.remove("open");
 
       // Sound Toggle
       const soundBtn = document.getElementById("soundToggleBtn");
@@ -12912,19 +12649,20 @@
 
       document.getElementById("confirmResetScoresBtn").onclick = () => {
         state.teams.forEach(t => {
-          t.score = 15;
+          t.score = 0;
           t.sips = 0;
           t.stash = 0;
+          t.crowns = 0;
           t.frozen = false;
         });
-        state.bingoCards.forEach(c => c.claimedBy = null);
-        addLog("Scores reset to 15 pts for all teams.");
+        state.bingoCards.forEach(c => { c.claimedBy = null; c.claimCount = 0; });
+        addLog("Scores reset to 0 pts for all teams.");
         saveGameState(true);
         renderCrewBar();
         renderScoringTab();
         renderBingoGrid();
         if (settingsModal) settingsModal.classList.remove("open");
-        showToast("Scores reset to 15 pts");
+        showToast("Scores reset to 0 pts");
       };
 
       document.getElementById("confirmFactoryResetBtn").onclick = () => {
@@ -13026,7 +12764,7 @@
 
       function openCrewSetupModal(isEditing = false) {
         const roomPill = document.getElementById("setupRoomPill");
-        if (roomPill) roomPill.textContent = `⚔️ ROOM: ${roomCode || "PRESTON"}`;
+        if (roomPill) roomPill.textContent = `⚔️ ROOM: ${roomCode || "PARTY"}`;
 
         setupSelectedTeamIdx = (state.myTeamIdx !== null && state.myTeamIdx !== undefined) ? state.myTeamIdx : 0;
         const myCrew = state.teams[setupSelectedTeamIdx];
@@ -13796,7 +13534,7 @@
 
         const phrases = [
           { time: 0, text: "🎴 SHUFFLING THE UNO DECK..." },
-          { time: 825, text: "🍺 SYNCING PRESTON ROUTE PUBS..." },
+          { time: 825, text: "⚡ SYNCING MULTI-PHONE PARTY ENGINE..." },
           { time: 1650, text: "📡 CONNECTING PHONE TAVERN NETWORK..." },
           { time: 2475, text: "⚔️ PREPARING THE UNO BATTLE..." },
           { time: 3225, text: "🚀 WELCOME TO DRUNK UNO!" }

@@ -2,11 +2,11 @@
 
 [![Live App](https://img.shields.io/badge/Live%20App-GitHub%20Pages-success.svg?style=for-the-badge&logo=github)](https://leeprky.github.io/drunk-uno/)
 [![Dev Preview](https://img.shields.io/badge/Dev%20Preview-Staging-blueviolet.svg?style=for-the-badge&logo=github)](https://leeprky.github.io/projects/drunk-uno/)
-[![Version](https://img.shields.io/badge/Version-v6.2-amber.svg?style=for-the-badge)](https://leeprky.github.io/drunk-uno/)
+[![Version](https://img.shields.io/badge/Version-v6.3-amber.svg?style=for-the-badge)](https://leeprky.github.io/drunk-uno/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
 > **The Ultimate Uno Drinking Game & Live Party Scoreboard.**  
-> Featuring private multi-room live synchronization, authoritative server-retained persistence, dual play modes (Single Phone Console & Live Party Sync), interactive Wheel of Doom, 10 Pub Crawl stops, and Uno Bingo feats & penalties.
+> A global real-time multiplayer party game where anyone can create a private room and play with their friends across smartphones. Featuring live multi-device MQTT WebSocket synchronization, authoritative server-retained persistence, dual play modes (Single Phone Console & Live Party Sync), interactive Wheel of Doom, drinking rules codex, and Party Bingo challenges.
 
 ---
 
@@ -24,29 +24,30 @@ Play immediately in your browser on desktop, tablet, iPhone, or Android:
 
 ## ✨ Features
 
-- **🏰 Multi-Room Private Hub**:
-  - Groups can join or create their own private rooms using a unique Room Code.
-  - Zero interference between different parties or crawls.
+- **🏰 Global Multi-Room Private Hub**:
+  - Anyone around the world can create or join their own private room using a unique Room Code.
+  - Complete isolation — zero interference between different games or friend groups.
+- **🛡️ Authoritative Server-Retained Persistence & Zero Reversion**:
+  - State is stored authoritatively on the MQTT broker.
+  - Phones locking, sleeping, or reloading automatically fetch the live state — **never reverting scores back to old snapshots**.
 - **⏳ Automatic Room Lifecycle & Expiration**:
   - Automatically purges inactive rooms after 30 minutes of idle time.
   - Displays a 5-minute warning banner with a "Keep Active" renewal button.
-  - Completed crawls auto-delete after a 10-minute celebration window (or instantly via the Crawl Master "Finish & Delete Room Now" button).
-  - Clears retained MQTT broker topics and resets connected devices cleanly.
-- **🛡️ Authoritative Server-Retained Persistence**:
-  - State is synchronized over MQTT WebSockets with server broker retention.
-  - Phones locking, refreshing, or sleeping will **never revert scores back to 15 points**.
-  - Monotonic conflict resolution and decoupled event streams.
+  - Completed games auto-delete after a 10-minute celebration window (or instantly via the Crawl Master "Finish & Delete Room Now" button).
 - **🎮 Dual Play Modes**:
   - **📱 Single Phone Console**: One phone manages scores, drink penalties, wheel spins, and bingo for all 4 crews. Perfect for casual tabletop sessions.
   - **⚡ Live Party Sync**: Every player connects their own smartphone, registers their name, picks their crew, and referees rival teams in real time.
-- **👑 Custom Crawl Master Admin Code**:
-  - First player to create a room sets their own private Admin Passcode with instant unlock.
+- **👑 Party Host & Crawl Master Admin Controls**:
+  - Start / End Game lifecycle control.
+  - Reset Room Scores to 0 without disconnecting players.
+  - Instant room deletion and custom admin passcode changer.
+  - Real-time connected device and IP directory with Kick & Ban.
 - **🎡 Interactive Wheel of Doom**:
   - GSAP physics-driven roulette wheel with spring needle deflection, sound effects, and team penalties.
-- **🎯 10-Pub Crawl Route & Tactical Bingo**:
-  - Live pub tracking, drink codex, secret bingo challenges, and instant win celebration podiums.
+- **🎯 Uno Party Bingo & Drinking Codex**:
+  - Official drinking card penalties (Draw 2, Wild Draw 4, Reverse bounce-backs, 7 Wild Heists) and live Party Bingo feats.
 - **📲 PWA & Offline Support**:
-  - Installable directly to your iOS or Android home screen with high-resolution app icons and standalone mode.
+  - Installable directly to your iOS or Android home screen with standalone mode and custom app icons.
 
 ---
 
