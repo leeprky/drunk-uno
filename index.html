@@ -5963,6 +5963,19 @@
         <button type="button" class="modal-btn secondary" id="adminSyncDeleteRoomBtn" style="display: none; border-color: #ef4444; color: #fca5a5;">🗑️ Delete & Close Room Now</button>
         <button type="button" class="modal-btn secondary" id="closeRoomSyncModalBtn">Close</button>
       </div>
+
+      <!-- Real-Time Authoritative Node Server Engine Controls -->
+      <div style="margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 10px; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <label style="font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; font-weight: 700; color: #94a3b8;">SERVER ENGINE (WEBSOCKET):</label>
+          <span id="syncBackendBadge" style="font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800; background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid #38bdf8;">SERVER LIVE</span>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <input type="text" id="syncServerUrlInput" class="glass-input" placeholder="e.g. ws://192.168.1.50:3000 or wss://..." style="flex: 1; padding: 7px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; background: rgba(0,0,0,0.5) !important; color: #f1f5f9 !important; border: 1.5px solid rgba(255,255,255,0.2) !important; border-radius: 6px;" />
+          <button type="button" id="saveServerUrlBtn" style="padding: 7px 12px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.3); color: #fff; font-size: 0.75rem; font-weight: 700; border-radius: 6px; cursor: pointer;">Connect</button>
+        </div>
+        <div style="font-size: 0.68rem; color: #64748b; margin-top: 4px; font-family: 'JetBrains Mono', monospace;">Authoritative Node Server: 0ms lag, live phone sync & persistent rooms.</div>
+      </div>
     </div>
   </div>
 
@@ -7279,15 +7292,34 @@
         state.senderId = getOrCreateDeviceId();
         persistLocalGameState();
 
-        if (broadcast && mqttClient && mqttClient.isConnected() && roomCode) {
-          try {
-            const serialized = JSON.stringify(state);
-            const message = new Paho.MQTT.Message(serialized);
-            message.destinationName = `leeprky/drunkuno/rooms/${roomCode}/state`;
-            message.retained = true; // Server-retained on MQTT broker!
-            mqttClient.send(message);
-          } catch (err) {
-            console.warn("MQTT broadcast error:", err);
+        if (broadcast && roomCode) {
+          // Priority 1: High-Speed Authoritative WebSocket Server
+          if (wsConnected && wsClient && wsClient.readyState === WebSocket.OPEN) {
+            try {
+              wsClient.send(JSON.stringify({
+                action: "SYNC_STATE",
+                roomCode: roomCode,
+                state: state,
+                sender: state.updatedBy,
+                senderId: state.senderId
+              }));
+              return;
+            } catch (err) {
+              console.warn("WS broadcast error:", err);
+            }
+          }
+
+          // Priority 2: Fallback to MQTT Broker if WS server is not active
+          if (mqttClient && mqttClient.isConnected()) {
+            try {
+              const serialized = JSON.stringify(state);
+              const message = new Paho.MQTT.Message(serialized);
+              message.destinationName = `leeprky/drunkuno/rooms/${roomCode}/state`;
+              message.retained = true; // Server-retained on MQTT broker!
+              mqttClient.send(message);
+            } catch (err) {
+              console.warn("MQTT broadcast error:", err);
+            }
           }
         }
       }
@@ -8540,6 +8572,160 @@
         }
       }
 
+      // =========================================================================
+      // DUAL REAL-TIME ENGINE: AUTHORITATIVE NODE WEBSOCKET SERVER + BROKER FALLBACK
+      // =========================================================================
+      let wsClient = null;
+      let wsConnected = false;
+      let wsReconnectTimer = null;
+
+      function getActiveServerWsUrl() {
+        const queryServer = urlParams.get("server");
+        if (queryServer) {
+          try { localStorage.setItem("drunk_uno_server_url", queryServer); } catch(e) {}
+          return queryServer;
+        }
+        const saved = localStorage.getItem("drunk_uno_server_url");
+        if (saved) return saved;
+
+        // Auto-detect when running from Node server directly (localhost or any LAN IP/host)
+        if (!window.location.hostname.includes("github.io") && window.location.protocol.startsWith("http")) {
+          const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+          return `${proto}//${window.location.host}`;
+        }
+        return "";
+      }
+
+      function getServerHttpUrl() {
+        const wsUrl = getActiveServerWsUrl();
+        if (wsUrl) {
+          if (wsUrl.startsWith("wss://")) return wsUrl.replace("wss://", "https://");
+          if (wsUrl.startsWith("ws://")) return wsUrl.replace("ws://", "http://");
+          return wsUrl;
+        }
+        if (!window.location.hostname.includes("github.io") && window.location.protocol.startsWith("http")) {
+          return window.location.origin;
+        }
+        return "";
+      }
+
+      function updateSyncBackendBadge(label) {
+        const badge = document.getElementById("syncBackendBadge");
+        if (badge) {
+          badge.textContent = label;
+          if (label.includes("SERVER")) {
+            badge.style.background = "rgba(56, 189, 248, 0.2)";
+            badge.style.color = "#38bdf8";
+            badge.style.borderColor = "#38bdf8";
+          } else {
+            badge.style.background = "rgba(234, 179, 8, 0.2)";
+            badge.style.color = "#facc15";
+            badge.style.borderColor = "#facc15";
+          }
+        }
+      }
+
+      function initWsSync() {
+        const wsUrl = getActiveServerWsUrl();
+        if (!wsUrl) {
+          initMqttSync();
+          return;
+        }
+
+        if (!roomCode) {
+          syncBtn.classList.remove("connecting");
+          syncBtn.classList.add("offline");
+          syncLabel.textContent = "SELECT ROOM";
+          return;
+        }
+
+        if (checkBannedStatus() || checkKickedStatus()) {
+          syncBtn.classList.remove("connecting");
+          syncBtn.classList.add("offline");
+          syncLabel.textContent = "DISCONNECTED";
+          return;
+        }
+
+        if (wsClient && (wsClient.readyState === WebSocket.OPEN || wsClient.readyState === WebSocket.CONNECTING)) {
+          return;
+        }
+
+        syncBtn.classList.remove("offline");
+        syncBtn.classList.add("connecting");
+        syncLabel.textContent = "CONNECTING WS";
+
+        try {
+          wsClient = new WebSocket(wsUrl);
+
+          wsClient.onopen = () => {
+            wsConnected = true;
+            hasReceivedBrokerState = true;
+            syncBtn.classList.remove("offline");
+            syncBtn.classList.remove("connecting");
+            syncLabel.textContent = "SERVER LIVE";
+            updateSyncBackendBadge("SERVER (WS)");
+
+            wsClient.send(JSON.stringify({
+              action: "JOIN_ROOM",
+              roomCode: roomCode,
+              deviceId: getOrCreateDeviceId(),
+              playerName: state.myPlayerName || localStorage.getItem("drunk_uno_player_name") || "Player",
+              teamIdx: state.myTeamIdx,
+              isHost: state.adminUnlocked
+            }));
+          };
+
+          wsClient.onmessage = (event) => {
+            try {
+              const msg = JSON.parse(event.data);
+              if (msg.type === "INIT_STATE" || msg.type === "ROOM_STATE" || msg.type === "STATE_UPDATE" || msg.type === "SCORE_UPDATED" || msg.type === "SCORES_RESET" || msg.type === "WHEEL_SPUN" || msg.type === "BINGO_CLAIMED") {
+                if (msg.state) {
+                  applyIncomingState(msg.state);
+                }
+              } else if (msg.type === "ROOM_DELETED") {
+                executeAutoRoomDeletion(msg.reason || "room closed on server");
+              } else if (msg.type === "ROOM_NOT_FOUND") {
+                executeAutoRoomDeletion("room not found on server");
+              } else if (msg.type === "TOAST" && msg.text) {
+                showToast(msg.text);
+              }
+            } catch (err) {
+              console.warn("WS parse error:", err);
+            }
+          };
+
+          wsClient.onclose = () => {
+            wsConnected = false;
+            syncBtn.classList.remove("connecting");
+            syncBtn.classList.add("offline");
+            syncLabel.textContent = "DISCONNECTED";
+            clearTimeout(wsReconnectTimer);
+            wsReconnectTimer = setTimeout(initRealtimeSync, 2500);
+          };
+
+          wsClient.onerror = (err) => {
+            console.warn("WebSocket error, fallback to broker:", err);
+            if (!wsConnected) {
+              setTimeout(() => {
+                if (!wsConnected) initMqttSync();
+              }, 2000);
+            }
+          };
+        } catch (e) {
+          console.warn("Failed to create WebSocket:", e);
+          initMqttSync();
+        }
+      }
+
+      function initRealtimeSync() {
+        const wsUrl = getActiveServerWsUrl();
+        if (wsUrl) {
+          initWsSync();
+        } else {
+          initMqttSync();
+        }
+      }
+
       function initMqttSync() {
         if (!roomCode) {
           syncBtn.classList.remove("connecting");
@@ -8641,12 +8827,17 @@
       // Automatically reconnect when network transitions from offline to online or phone wakes up
       function handleAppWakeup() {
         if (!roomCode) return;
+        if (wsConnected && wsClient && wsClient.readyState === WebSocket.OPEN) {
+          try {
+            wsClient.send(JSON.stringify({ action: "TOUCH_ROOM", roomCode }));
+          } catch (e) {}
+          return;
+        }
         if (!mqttClient || !mqttClient.isConnected()) {
           hasReceivedBrokerState = false;
-          initMqttSync();
+          initRealtimeSync();
         } else {
           try {
-            // Re-subscribe to force broker to push the latest retained state immediately upon unlock
             mqttClient.unsubscribe(`leeprky/drunkuno/rooms/${roomCode}/state`);
             mqttClient.subscribe(`leeprky/drunkuno/rooms/${roomCode}/state`);
           } catch (e) {}
@@ -8669,13 +8860,17 @@
             return;
           }
           showToast("🔄 Syncing live scores with room...");
-          if (!mqttClient || !mqttClient.isConnected()) {
-            initMqttSync();
+          if (wsConnected && wsClient && wsClient.readyState === WebSocket.OPEN) {
+            try {
+              wsClient.send(JSON.stringify({ action: "JOIN_ROOM", roomCode, deviceId: getOrCreateDeviceId() }));
+            } catch(e) {}
+          } else if (!mqttClient || !mqttClient.isConnected()) {
+            initRealtimeSync();
           } else {
             try {
               mqttClient.unsubscribe(`leeprky/drunkuno/rooms/${roomCode}/state`);
               mqttClient.subscribe(`leeprky/drunkuno/rooms/${roomCode}/state`);
-            } catch (e) {}
+            } catch(e) {}
           }
         };
       }
@@ -12330,7 +12525,32 @@
       function openRoomInfoModal() {
         document.getElementById("roomCodeInput").value = roomCode || "";
         updateTopRoomBadge();
+        const serverInp = document.getElementById("syncServerUrlInput");
+        if (serverInp) {
+          serverInp.value = localStorage.getItem("drunk_uno_server_url") || getActiveServerWsUrl() || "";
+        }
+        updateSyncBackendBadge(wsConnected ? "SERVER LIVE (WS)" : (getActiveServerWsUrl() ? "WS CONNECTING" : "MQTT BROKER"));
         document.getElementById("roomSyncModal").classList.add("open");
+      }
+
+      const saveServerUrlBtn = document.getElementById("saveServerUrlBtn");
+      if (saveServerUrlBtn) {
+        saveServerUrlBtn.onclick = () => {
+          const inp = document.getElementById("syncServerUrlInput");
+          const val = (inp?.value || "").trim();
+          if (val) {
+            localStorage.setItem("drunk_uno_server_url", val);
+            showToast("📡 Server URL saved! Connecting...");
+          } else {
+            localStorage.removeItem("drunk_uno_server_url");
+            showToast("ℹ️ Server URL cleared. Using auto-detect / broker.");
+          }
+          if (wsClient) {
+            try { wsClient.close(); } catch(e) {}
+            wsClient = null;
+          }
+          initRealtimeSync();
+        };
       }
 
       document.getElementById("syncRoomBtn").onclick = openRoomInfoModal;
@@ -12523,14 +12743,37 @@
         modal.classList.add("open");
       }
 
-      // Check whether a room code exists and is active on the broker
-      function verifyRoomExists(targetCode, timeoutMs = 1800) {
-        return new Promise((resolve) => {
-          const cleanCode = (targetCode || "").toUpperCase().trim().replace(/[^A-Z0-9_-]/g, "");
-          if (!cleanCode) {
-            return resolve({ exists: false, reason: "empty" });
-          }
+      // Check whether a room code exists and is active (Server REST or broker probe)
+      async function verifyRoomExists(targetCode, timeoutMs = 1800) {
+        const cleanCode = (targetCode || "").toUpperCase().trim().replace(/[^A-Z0-9_-]/g, "");
+        if (!cleanCode) {
+          return { exists: false, reason: "empty" };
+        }
 
+        // 1. Direct Server HTTP check (instant <5ms)
+        const serverHttp = getServerHttpUrl();
+        if (serverHttp) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 1200);
+            const res = await fetch(`${serverHttp}/api/rooms/${encodeURIComponent(cleanCode)}`, {
+              signal: controller.signal,
+              cache: 'no-store'
+            });
+            clearTimeout(timeoutId);
+            if (res.ok) {
+              const data = await res.json();
+              return { exists: true, state: data.state };
+            } else if (res.status === 404) {
+              return { exists: false, reason: "not_found" };
+            }
+          } catch (e) {
+            console.warn("Server HTTP room check bypassed, using broker probe:", e);
+          }
+        }
+
+        // 2. Fallback to broker probe if server is unreachable
+        return new Promise((resolve) => {
           let resolved = false;
           let timer = null;
 
@@ -12767,7 +13010,7 @@
             if (check.state) {
               applyIncomingState(check.state);
             }
-            initMqttSync();
+            initRealtimeSync();
             updateTopRoomBadge();
 
             const modal = document.getElementById("roomGatewayModal");
@@ -12861,7 +13104,7 @@
             } catch(e) {}
 
             saveGameState(true);
-            initMqttSync();
+            initRealtimeSync();
             updateTopRoomBadge();
 
             const modal = document.getElementById("roomGatewayModal");
@@ -13771,7 +14014,7 @@
       renderBingoGrid();
       renderLogs();
       renderAdminTab();
-      initMqttSync();
+      initRealtimeSync();
 
       if (state.adminUnlocked && openAdminBtn) {
         openAdminBtn.innerHTML = "<span>🔒 ADMIN ✓</span>";

@@ -15,7 +15,30 @@ Play immediately in your browser on desktop, tablet, iPhone, or Android:
 | Environment | Branch | Description | Live URL |
 | :--- | :---: | :--- | :--- |
 | 🚀 **Live Production Site** | `main` | Official production release | **[https://leeprky.github.io/drunk-uno/](https://leeprky.github.io/drunk-uno/)** |
+| 🖥️ **Authoritative Game Server** | `dev` / `main` | High-speed Node.js + WebSocket Server | `npm start` (`http://localhost:3000`) |
 | 🌿 **Development Branch** | `dev` | Active development branch source | [View `dev` Branch](https://github.com/leeprky/drunk-uno/tree/dev) |
+
+---
+
+## 🚀 Running the Dedicated Authoritative Server
+
+For zero-latency real-time multiplayer with atomic scoring and zero desync between phones:
+
+```bash
+# Clone the repository
+git clone https://github.com/leeprky/drunk-uno.git
+cd drunk-uno
+
+# Install dependencies (only lightweight 'ws')
+npm install
+
+# Start the server
+npm start
+```
+
+- **Open in Browser**: Navigate to `http://localhost:3000` on your desktop or `http://<your-lan-ip>:3000` on your mobile phone on the same Wi-Fi.
+- **Port**: Default is `3000` (or override with `PORT=8080 npm start`).
+- **Free Cloud Deployment**: Push this repo directly to [Render](https://render.com), [Railway](https://railway.app), or [Fly.io](https://fly.io) — WebSockets and static assets are served together automatically out of the box.
 
 ---
 
