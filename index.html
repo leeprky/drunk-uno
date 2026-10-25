@@ -5675,6 +5675,11 @@
               <p style="font-size: 0.88rem; color: #cbd5e1; margin-bottom: 12px;">
                 Reset scores without kicking players, change room admin passcode, or permanently delete room:
               </p>
+              <div style="margin-bottom: 10px;">
+                <button type="button" class="modal-btn" id="adminForceBroadcastBtn" style="width: 100%; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1.5px solid #34d399; color: #fff; font-weight: 800; padding: 12px 14px; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);">
+                  ⚡ Broadcast My Scores to All Devices
+                </button>
+              </div>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                 <button type="button" class="modal-btn" id="adminResetScoresBtn" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%); border: 1.5px solid #facc15; color: #fff; font-weight: 700; padding: 10px 14px;">
                   🔄 Reset Scores to 0
@@ -7264,10 +7269,38 @@
         try { localStorage.setItem(storageKey, serialized); } catch (e) {}
       }
 
+      function broadcastRoomEvent(eventObj) {
+        if (!mqttClient || !mqttClient.isConnected() || !roomCode) return false;
+        try {
+          if (!eventObj.senderId) eventObj.senderId = getOrCreateDeviceId();
+          if (!eventObj.eventId) eventObj.eventId = "evt_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
+          if (!eventObj.timestamp) eventObj.timestamp = Date.now();
+          if (!eventObj.roomCode) eventObj.roomCode = roomCode;
+          const msg = new Paho.MQTT.Message(JSON.stringify(eventObj));
+          msg.destinationName = `leeprky/drunkuno/rooms/${roomCode}/events`;
+          msg.retained = false;
+          mqttClient.send(msg);
+          return true;
+        } catch (e) {
+          console.warn("broadcastRoomEvent error:", e);
+          return false;
+        }
+      }
+
+      let saveGameStateDebounceTimer = null;
+      function debounceSaveGameState(delayMs = 600) {
+        persistLocalGameState();
+        if (saveGameStateDebounceTimer) clearTimeout(saveGameStateDebounceTimer);
+        saveGameStateDebounceTimer = setTimeout(() => {
+          saveGameState(true);
+        }, delayMs);
+      }
+
       function saveGameState(broadcast = true) {
         state.version = (state.version || 0) + 1;
         state.updatedAt = Date.now();
         state.updatedBy = state.myPlayerName || (state.playMode === "single" ? "Crawl Master" : "Player");
+        state.senderId = getOrCreateDeviceId();
         persistLocalGameState();
 
         if (broadcast && mqttClient && mqttClient.isConnected() && roomCode) {
@@ -7281,6 +7314,68 @@
             console.warn("MQTT broadcast error:", err);
           }
         }
+      }
+
+      function applyScoreDelta(targetIdx, deltaScore = 0, deltaSips = 0, logMsg = "", extras = {}) {
+        if (checkSpectatorBlock()) return;
+        const targetTeam = state.teams[targetIdx];
+        if (!targetTeam) return;
+
+        if (typeof deltaScore === "number" && deltaScore !== 0) {
+          targetTeam.score += deltaScore;
+        }
+        if (typeof deltaSips === "number" && deltaSips !== 0) {
+          targetTeam.sips = Math.max(0, (targetTeam.sips || 0) + deltaSips);
+        }
+        if (typeof extras.stashDelta === "number" && extras.stashDelta !== 0) {
+          targetTeam.stash = Math.max(0, (targetTeam.stash || 0) + extras.stashDelta);
+        }
+        if (typeof extras.crownsDelta === "number" && extras.crownsDelta !== 0) {
+          targetTeam.crowns = Math.max(0, (targetTeam.crowns || 0) + extras.crownsDelta);
+        }
+        if (extras.setFrozen !== undefined) {
+          targetTeam.frozen = !!extras.setFrozen;
+        }
+
+        if (typeof extras.attackerTeamIdx === "number" && typeof extras.attackerScoreDelta === "number") {
+          const atk = state.teams[extras.attackerTeamIdx];
+          if (atk) {
+            atk.score += extras.attackerScoreDelta;
+            if (extras.attackerStashDelta) {
+              atk.stash = Math.max(0, (atk.stash || 0) + extras.attackerStashDelta);
+            }
+          }
+        }
+
+        if (logMsg) {
+          addLog(logMsg);
+        }
+
+        recalculateTeamCrowns();
+
+        // 1. Instant local render & sound
+        renderCrewBar();
+        renderScoringTab();
+
+        // 2. Broadcast ultra-fast delta event (<50ms delivery)
+        broadcastRoomEvent({
+          action: "SCORE_DELTA",
+          targetTeamIdx: targetIdx,
+          delta: deltaScore,
+          sipsDelta: deltaSips,
+          stashDelta: extras.stashDelta || 0,
+          crownsDelta: extras.crownsDelta || 0,
+          setFrozen: extras.setFrozen,
+          attackerTeamIdx: extras.attackerTeamIdx,
+          attackerScoreDelta: extras.attackerScoreDelta,
+          attackerStashDelta: extras.attackerStashDelta,
+          logMsg: logMsg,
+          newScore: targetTeam.score,
+          newSips: targetTeam.sips
+        });
+
+        // 3. Debounced full state consolidation to broker (retained snapshot)
+        debounceSaveGameState(600);
       }
 
       function loadGameState() {
@@ -8183,9 +8278,39 @@
         openRoomGatewayModal();
       }
 
+      const seenEventIds = new Set();
+      function rememberEvent(id) {
+        if (!id) return false;
+        if (seenEventIds.has(id)) return true;
+        seenEventIds.add(id);
+        if (seenEventIds.size > 250) {
+          const first = seenEventIds.values().next().value;
+          seenEventIds.delete(first);
+        }
+        return false;
+      }
+
+      function showScorePulseToast(evt) {
+        if (!evt) return;
+        const targetTeam = state.teams[evt.targetTeamIdx];
+        if (!targetTeam) return;
+        const delta = evt.delta;
+        let txt = "";
+        if (typeof delta === "number" && delta !== 0) {
+          txt = `⚡ ${targetTeam.name}: ${delta > 0 ? '+' + delta : delta} pts (${targetTeam.score}p)`;
+        } else if (evt.sipsDelta) {
+          txt = `🍺 ${targetTeam.name} +${evt.sipsDelta} sip(s)`;
+        } else if (evt.setFrozen !== undefined) {
+          txt = evt.setFrozen ? `❄️ ${targetTeam.name} Frozen!` : `☀️ ${targetTeam.name} Unfrozen!`;
+        }
+        if (txt) {
+          showToast(txt);
+        }
+      }
+
       let hasReceivedBrokerState = false;
 
-      function applyIncomingState(incoming) {
+      function applyIncomingState(incoming, isForced = false) {
         if (!incoming || !Array.isArray(incoming.teams)) return;
 
         // Auto-delete check on incoming state
@@ -8198,10 +8323,16 @@
           return;
         }
 
+        // Ignore our own echoed state snapshot
+        const myDevId = getOrCreateDeviceId();
+        if (!isForced && incoming.senderId && incoming.senderId === myDevId) {
+          return;
+        }
+
         const incomingResetEpoch = incoming.resetEpoch || 0;
         const localResetEpoch = state.resetEpoch || 0;
 
-        if (incomingResetEpoch < localResetEpoch) {
+        if (!isForced && incomingResetEpoch < localResetEpoch) {
           return;
         }
 
@@ -8211,9 +8342,6 @@
         if (!hasReceivedBrokerState) {
           // First state message from broker is authoritative for this session
           hasReceivedBrokerState = true;
-        } else if (incomingResetEpoch === localResetEpoch && incVer < locVer) {
-          // Discard incoming state if strictly older in logical revision within same epoch
-          return;
         }
 
         state.teams = incoming.teams;
@@ -8255,14 +8383,13 @@
         if (incoming.playMode) state.playMode = incoming.playMode;
         if (incoming.adminPasscode) state.adminPasscode = incoming.adminPasscode;
 
-        state.version = Math.max(incVer, locVer);
+        state.version = Math.max(incVer, locVer) + 1;
         state.updatedAt = incoming.updatedAt || Date.now();
         state.updatedBy = incoming.updatedBy || state.updatedBy;
 
         recalculateTeamCrowns();
 
         // Sync our persistent team if admin reassigned us in the device roster
-        const myDevId = getOrCreateDeviceId();
         if (state.devices && state.devices[myDevId] && typeof state.devices[myDevId].teamIdx === "number" && state.devices[myDevId].teamIdx >= 0) {
           state.myTeamIdx = state.devices[myDevId].teamIdx;
           try { localStorage.setItem("drunk_uno_team_idx", String(state.myTeamIdx)); } catch (e) {}
@@ -8294,7 +8421,133 @@
       }
 
       function handleRoomEvent(incoming) {
-        if (!incoming) return;
+        if (!incoming || !incoming.action) return;
+
+        // Ignore our own echoed events
+        const myDevId = getOrCreateDeviceId();
+        if (incoming.senderId && incoming.senderId === myDevId) {
+          return;
+        }
+
+        // Deduplicate events by eventId
+        if (incoming.eventId && rememberEvent(incoming.eventId)) {
+          return;
+        }
+
+        // 1. Ultra-fast Live Score Delta (<50ms peer sync)
+        if (incoming.action === "SCORE_DELTA") {
+          const tIdx = incoming.targetTeamIdx;
+          if (typeof tIdx === "number" && state.teams[tIdx]) {
+            if (typeof incoming.delta === "number" && incoming.delta !== 0) {
+              state.teams[tIdx].score += incoming.delta;
+            }
+            if (typeof incoming.sipsDelta === "number" && incoming.sipsDelta !== 0) {
+              state.teams[tIdx].sips = Math.max(0, (state.teams[tIdx].sips || 0) + incoming.sipsDelta);
+            }
+            if (typeof incoming.stashDelta === "number" && incoming.stashDelta !== 0) {
+              state.teams[tIdx].stash = Math.max(0, (state.teams[tIdx].stash || 0) + incoming.stashDelta);
+            }
+            if (typeof incoming.crownsDelta === "number" && incoming.crownsDelta !== 0) {
+              state.teams[tIdx].crowns = Math.max(0, (state.teams[tIdx].crowns || 0) + incoming.crownsDelta);
+            }
+            if (incoming.setFrozen !== undefined) {
+              state.teams[tIdx].frozen = !!incoming.setFrozen;
+            }
+            if (typeof incoming.attackerTeamIdx === "number" && typeof incoming.attackerScoreDelta === "number" && state.teams[incoming.attackerTeamIdx]) {
+              state.teams[incoming.attackerTeamIdx].score += incoming.attackerScoreDelta;
+              if (incoming.attackerStashDelta) {
+                state.teams[incoming.attackerTeamIdx].stash = Math.max(0, (state.teams[incoming.attackerTeamIdx].stash || 0) + incoming.attackerStashDelta);
+              }
+            }
+            if (incoming.logMsg) {
+              addLog(incoming.logMsg);
+            }
+
+            recalculateTeamCrowns();
+            persistLocalGameState();
+            renderCrewBar();
+            renderScoringTab();
+            playTick(720);
+            showScorePulseToast(incoming);
+          }
+          return;
+        }
+
+        // 2. Real-time Waterfall Chain across all teams
+        if (incoming.action === "WATERFALL_SIP") {
+          state.teams.forEach((t, i) => {
+            if (i !== incoming.myTeamIdx) t.sips += 3;
+            else t.sips += 1;
+          });
+          if (incoming.logMsg) addLog(incoming.logMsg);
+          persistLocalGameState();
+          renderCrewBar();
+          renderScoringTab();
+          playBuzzer();
+          showToast("🌊 Waterfall chain triggered across all teams!");
+          return;
+        }
+
+        // 3. Real-time Bingo Challenge Claim
+        if (incoming.action === "BINGO_CLAIM") {
+          const cId = incoming.cardId;
+          const card = (state.bingoCards || []).find(c => c.id === cId);
+          const tIdx = incoming.targetTeamIdx;
+          if (card && typeof tIdx === "number" && state.teams[tIdx]) {
+            if (incoming.claimCount !== undefined) card.claimCount = incoming.claimCount;
+            if (incoming.claimedBy !== undefined) card.claimedBy = incoming.claimedBy;
+            if (typeof incoming.pts === "number") {
+              state.teams[tIdx].score += incoming.pts;
+            }
+            if (incoming.logMsg) {
+              addLog(incoming.logMsg);
+            }
+            recalculateTeamCrowns();
+            persistLocalGameState();
+            renderCrewBar();
+            renderScoringTab();
+            renderBingoGrid();
+            playFanfare(incoming.pts > 0 ? "win" : "freeze");
+            showToast(`⭐ Bingo: ${card.title} claimed for ${state.teams[tIdx].name}!`);
+          }
+          return;
+        }
+
+        // 4. Peer-to-Peer Room Sync Handshake
+        if (incoming.action === "REQUEST_ROOM_SYNC") {
+          if (state && Array.isArray(state.teams) && mqttClient && mqttClient.isConnected()) {
+            broadcastRoomEvent({
+              action: "ROOM_SYNC_RESPONSE",
+              targetDevId: incoming.senderId,
+              stateSnapshot: state
+            });
+          }
+          return;
+        }
+
+        if (incoming.action === "ROOM_SYNC_RESPONSE") {
+          if (incoming.targetDevId && incoming.targetDevId === myDevId && incoming.stateSnapshot) {
+            applyIncomingState(incoming.stateSnapshot, true);
+            showToast("⚡ Synchronized live scores from active peer!");
+          }
+          return;
+        }
+
+        // 5. Force Authoritative State Broadcast (from Admin "Push My Screen to All")
+        if (incoming.action === "FORCE_STATE_OVERRIDE" && incoming.stateSnapshot) {
+          applyIncomingState(incoming.stateSnapshot, true);
+          playFanfare("win");
+          showToast("👑 Crawl Master broadcast authoritative game state!");
+          return;
+        }
+
+        // 6. Generic Room Log Event
+        if (incoming.action === "ROOM_LOG" && incoming.logMsg) {
+          addLog(incoming.logMsg);
+          persistLocalGameState();
+          renderLogs();
+          return;
+        }
 
         // Room Auto-Deleted Signal (30m inactivity or crawl completion)
         if (incoming.action === "ROOM_AUTO_DELETED") {
@@ -8617,12 +8870,18 @@
               mqttClient.subscribe(`leeprky/drunkuno/rooms/${roomCode}/events`);
               mqttClient.subscribe(`leeprky/drunkuno/${roomCode}`);
               
-              // Broadcast current state to broker if broker has no retained state after 750ms
+              // Request fresh live state from active peers immediately (<50ms response)
+              broadcastRoomEvent({
+                action: "REQUEST_ROOM_SYNC",
+                senderId: getOrCreateDeviceId()
+              });
+
+              // Fallback seed to broker only if room is brand new and no state arrived after 4s
               setTimeout(() => {
                 if (!hasReceivedBrokerState && state && state.roomCode && mqttClient && mqttClient.isConnected()) {
                   saveGameState(true);
                 }
-              }, 750);
+              }, 4000);
 
               // Inform existing room peers that this device has connected
               syncMyDevice();
@@ -8648,6 +8907,11 @@
           initMqttSync();
         } else {
           try {
+            // Request fresh live state from active room peers (sub-second response)
+            broadcastRoomEvent({
+              action: "REQUEST_ROOM_SYNC",
+              senderId: getOrCreateDeviceId()
+            });
             // Re-subscribe to force broker to push the latest retained state immediately upon unlock
             mqttClient.unsubscribe(`leeprky/drunkuno/rooms/${roomCode}/state`);
             mqttClient.subscribe(`leeprky/drunkuno/rooms/${roomCode}/state`);
@@ -8662,6 +8926,29 @@
           handleAppWakeup();
         }
       });
+
+      if (syncBtn) {
+        syncBtn.onclick = () => {
+          playTick(600);
+          if (!roomCode) {
+            openRoomGatewayModal();
+            return;
+          }
+          showToast("🔄 Syncing live scores with room...");
+          if (!mqttClient || !mqttClient.isConnected()) {
+            initMqttSync();
+          } else {
+            broadcastRoomEvent({
+              action: "REQUEST_ROOM_SYNC",
+              senderId: getOrCreateDeviceId()
+            });
+            try {
+              mqttClient.unsubscribe(`leeprky/drunkuno/rooms/${roomCode}/state`);
+              mqttClient.subscribe(`leeprky/drunkuno/rooms/${roomCode}/state`);
+            } catch (e) {}
+          }
+        };
+      }
 
       // --- 03. SOUND & HAPTICS (SYNTHESIZED WEB AUDIO) ---
       let audioCtx = null;
@@ -9648,89 +9935,79 @@
           btn.onclick = () => {
             if (checkSpectatorBlock()) return;
             const act = btn.dataset.unoScore;
+            const targetIdx = state.targetTeamIdx;
+            const myIdx = (state.myTeamIdx !== null && state.myTeamIdx !== undefined) ? state.myTeamIdx : null;
+            const atkName = myTeam ? myTeam.name : "Attackers";
+
             if (act === "skip") {
-              targetTeam.sips += 2;
-              addLog(`🚫 SKIP: ${myTeam ? myTeam.name : 'Attackers'} skipped ${targetTeam.name}! (0 pts, 2 sips to defenders).`);
               playBuzzer();
+              applyScoreDelta(targetIdx, 0, 2, `🚫 SKIP: ${atkName} skipped ${targetTeam.name}! (0 pts, 2 sips to defenders).`);
             } else if (act === "draw2") {
-              targetTeam.score -= 2;
-              if (myTeam) myTeam.score += 2;
-              targetTeam.sips += 2;
-              addLog(`+2 DRAW: ${myTeam ? myTeam.name : 'Attackers'} hit ${targetTeam.name} with Draw 2! (+2 Atk / -2 Def, 2 sips to defenders).`);
               playBuzzer();
+              applyScoreDelta(targetIdx, -2, 2, `+2 DRAW: ${atkName} hit ${targetTeam.name} with Draw 2! (+2 Atk / -2 Def, 2 sips to defenders).`, {
+                attackerTeamIdx: myIdx !== null ? myIdx : undefined,
+                attackerScoreDelta: 2
+              });
             } else if (act === "heist7") {
-              targetTeam.score -= 1;
-              if (myTeam) myTeam.score += 1;
-              if (targetTeam.stash > 0) {
-                targetTeam.stash -= 1;
-                if (myTeam && myTeam.stash < 2) myTeam.stash += 1;
-              }
-              addLog(`🃏 7 HEIST: ${myTeam ? myTeam.name : 'Attackers'} played matching 7 against ${targetTeam.name}! (+1 Atk / -1 Def, stole 1 Wild card!).`);
               playCoinDing();
               spawnCoins(15);
+              applyScoreDelta(targetIdx, -1, 0, `🃏 7 HEIST: ${atkName} played matching 7 against ${targetTeam.name}! (+1 Atk / -1 Def, stole 1 Wild card!).`, {
+                attackerTeamIdx: myIdx !== null ? myIdx : undefined,
+                attackerScoreDelta: 1,
+                stashDelta: targetTeam.stash > 0 ? -1 : 0,
+                attackerStashDelta: (myTeam && myTeam.stash < 2 && targetTeam.stash > 0) ? 1 : 0
+              });
             } else if (act === "wild4") {
-              targetTeam.score -= 4;
-              if (myTeam) myTeam.score += 4;
-              targetTeam.sips += 4;
-              addLog(`💥 WILD +4: ${myTeam ? myTeam.name : 'Attackers'} hit ${targetTeam.name} with Wild +4! (+4 Atk / -4 Def, defenders drink 1/2 drink OR take a shot!).`);
               playBuzzer();
+              applyScoreDelta(targetIdx, -4, 4, `💥 WILD +4: ${atkName} hit ${targetTeam.name} with Wild +4! (+4 Atk / -4 Def, defenders drink 1/2 drink OR take a shot!).`, {
+                attackerTeamIdx: myIdx !== null ? myIdx : undefined,
+                attackerScoreDelta: 4
+              });
             } else if (act === "spew") {
-              targetTeam.score -= 5;
-              addLog(`🤮 SPEW: ${targetTeam.name} suffered a spewing penalty! (-5 pts).`);
               playBuzzer();
+              applyScoreDelta(targetIdx, -5, 0, `🤮 SPEW: ${targetTeam.name} suffered a spewing penalty! (-5 pts).`);
             } else if (act === "reverse") {
-              targetTeam.score += 2;
-              if (myTeam) myTeam.score -= 2;
-              addLog(`🔄 REVERSE: ${targetTeam.name} reversed attack with a Wild! (Flat +2 Def bonus to ${targetTeam.name}, reflected onto attackers).`);
               playCoinDing();
               spawnCoins(20);
+              applyScoreDelta(targetIdx, 2, 0, `🔄 REVERSE: ${targetTeam.name} reversed attack with a Wild! (Flat +2 Def bonus to ${targetTeam.name}, reflected onto attackers).`, {
+                attackerTeamIdx: myIdx !== null ? myIdx : undefined,
+                attackerScoreDelta: -2
+              });
             } else if (act === "wheelwin") {
-              targetTeam.score += 8;
-              addLog(`🎡 WHEEL VICTORY: ${targetTeam.name} won Wheel challenge! (+8 points).`);
               playCoinDing();
               spawnCoins(30);
+              applyScoreDelta(targetIdx, 8, 0, `🎡 WHEEL VICTORY: ${targetTeam.name} won Wheel challenge! (+8 points).`);
             } else if (act === "wheelloss") {
-              targetTeam.score -= 8;
-              addLog(`🎡 WHEEL DEFEAT: ${targetTeam.name} lost Wheel challenge! (-8 points).`);
               playBuzzer();
+              applyScoreDelta(targetIdx, -8, 0, `🎡 WHEEL DEFEAT: ${targetTeam.name} lost Wheel challenge! (-8 points).`);
             } else if (act === "nouno") {
-              targetTeam.score -= 2;
-              targetTeam.sips += 2;
-              addLog(`🤫 FORGOT UNO: ${targetTeam.name} held 1 card without shouting UNO! (-2 pts, 2 sips).`);
               playBuzzer();
+              applyScoreDelta(targetIdx, -2, 2, `🤫 FORGOT UNO: ${targetTeam.name} held 1 card without shouting UNO! (-2 pts, 2 sips).`);
             } else if (act === "pubcrown") {
-              targetTeam.score += 10;
-              targetTeam.crowns = Math.min(10, (targetTeam.crowns || 0) + 1);
-              addLog(`👑 PUB CROWN: ${targetTeam.name} crowned pub stop champion! (+10 pts & Crown #${targetTeam.crowns}).`);
               playCoinDing();
               spawnCoins(35);
+              applyScoreDelta(targetIdx, 10, 0, `👑 PUB CROWN: ${targetTeam.name} crowned pub stop champion! (+10 pts & Crown #${(targetTeam.crowns || 0) + 1}).`, {
+                crownsDelta: 1
+              });
             } else if (act === "rulebreak") {
-              targetTeam.sips += 1;
-              addLog(`⚠️ RULE 0: ${targetTeam.name} violated house law (1 sip penalty, 0 pts).`);
               playBuzzer();
+              applyScoreDelta(targetIdx, 0, 1, `⚠️ RULE 0: ${targetTeam.name} violated house law (1 sip penalty, 0 pts).`);
             } else if (act === "mysteryshot") {
-              targetTeam.sips += 4;
-              addLog(`💀 4th PLACE FORFEIT: ${targetTeam.name} finished last at this pub and took the Mystery Shot chosen by the rival teams!`);
               playBuzzer();
               try { navigator.vibrate && navigator.vibrate([150, 80, 150]); } catch (e) {}
+              applyScoreDelta(targetIdx, 0, 4, `💀 4th PLACE FORFEIT: ${targetTeam.name} finished last at this pub and took the Mystery Shot chosen by rival teams!`);
             } else if (act === "cheating") {
-              targetTeam.score -= 8;
-              targetTeam.sips += 4;
-              addLog(`🚨 CAUGHT CHEATING: ${targetTeam.name} was caught cheating! (-8 pts, defenders take 1 shot/drink penalty).`);
               playBuzzer();
               try { navigator.vibrate && navigator.vibrate([200, 80, 200]); } catch (e) {}
+              applyScoreDelta(targetIdx, -8, 4, `🚨 CAUGHT CHEATING: ${targetTeam.name} was caught cheating! (-8 pts, defenders take 1 shot/drink penalty).`);
             } else if (act === "wild10nuke") {
-              targetTeam.score -= 10;
-              if (myTeam) myTeam.score += 5;
-              targetTeam.sips += 6;
-              const attackerName = myTeam ? myTeam.name : "Attackers";
-              addLog(`💥 SECRET +10 NUKE: ${attackerName} dropped a Secret +10 Nuke on ${targetTeam.name}! (+5 Atk / -10 Def, whole defending team DOWNS drink OR shot of attackers' choice!).`);
               playBuzzer();
               try { navigator.vibrate && navigator.vibrate([200, 100, 200, 100, 300]); } catch (e) {}
+              applyScoreDelta(targetIdx, -10, 6, `💥 SECRET +10 NUKE: ${atkName} dropped a Secret +10 Nuke on ${targetTeam.name}! (+5 Atk / -10 Def, whole defending team DOWNS drink OR shot!).`, {
+                attackerTeamIdx: myIdx !== null ? myIdx : undefined,
+                attackerScoreDelta: 5
+              });
             }
-            saveGameState(true);
-            renderCrewBar();
-            renderScoringTab();
           };
         });
 
@@ -9739,17 +10016,13 @@
           btn.onclick = () => {
             if (checkSpectatorBlock()) return;
             const delta = parseInt(btn.dataset.pointAdj, 10);
-            targetTeam.score += delta;
-            addLog(`⚖️ MANUAL ADJUST: ${targetTeam.name} adjusted by ${delta > 0 ? '+' + delta : delta} points.`);
             if (delta > 0) {
               playCoinDing();
               spawnCoins(15);
             } else {
               playBuzzer();
             }
-            saveGameState(true);
-            renderCrewBar();
-            renderScoringTab();
+            applyScoreDelta(state.targetTeamIdx, delta, 0, `⚖️ MANUAL ADJUST: ${targetTeam.name} adjusted by ${delta > 0 ? '+' + delta : delta} points.`);
           };
         });
 
@@ -9757,13 +10030,9 @@
           btn.onclick = () => {
             if (checkSpectatorBlock()) return;
             const count = parseInt(btn.dataset.sipAdd, 10);
-            targetTeam.sips += count;
             const drinker = (myTeam && myTeam.name) ? myTeam.name : (state.myPlayerName || 'Drinker');
-            addLog(`🍺 ${targetTeam.name} logged ${count} drink/sip(s) by ${drinker}.`);
             playBuzzer();
-            saveGameState(true);
-            renderCrewBar();
-            renderScoringTab();
+            applyScoreDelta(state.targetTeamIdx, 0, count, `🍺 ${targetTeam.name} logged ${count} drink/sip(s) by ${drinker}.`);
           };
         });
 
@@ -9771,12 +10040,11 @@
         if (freezeToggleBtn) {
           freezeToggleBtn.onclick = () => {
             if (checkSpectatorBlock()) return;
-            targetTeam.frozen = !targetTeam.frozen;
-            addLog(targetTeam.frozen ? `❄️ Drinker's Freeze activated on ${targetTeam.name}!` : `☀️ Freeze lifted from ${targetTeam.name}.`);
-            playFanfare("freeze");
-            saveGameState(true);
-            renderCrewBar();
-            renderScoringTab();
+            const willFreeze = !targetTeam.frozen;
+            playFanfare(willFreeze ? "freeze" : "win");
+            applyScoreDelta(state.targetTeamIdx, 0, 0, willFreeze ? `❄️ Drinker's Freeze activated on ${targetTeam.name}!` : `☀️ Freeze lifted from ${targetTeam.name}.`, {
+              setFrozen: willFreeze
+            });
           };
         }
 
@@ -10183,13 +10451,10 @@
           btnAtk.textContent = `⚔️ ${myTeam.name} Won (+8 pts / -8 pts)`;
           btnAtk.onclick = () => {
             const victim = state.teams[chosenVictimIdx];
-            myTeam.score += 8;
-            victim.score -= 8;
-            victim.sips += 4;
-            addLog(`🍺 CHUG CHALLENGE: ${myTeam.name} defeated ${victim.name}! (+8 pts / -8 pts).`);
-            saveGameState(true);
-            renderCrewBar();
-            renderScoringTab();
+            applyScoreDelta(chosenVictimIdx, -8, 4, `🍺 CHUG CHALLENGE: ${myTeam.name} defeated ${victim.name}! (+8 pts / -8 pts).`, {
+              attackerTeamIdx: state.myTeamIdx,
+              attackerScoreDelta: 8
+            });
             document.getElementById("outcomeModal").classList.remove("open");
           };
 
@@ -10198,13 +10463,10 @@
           btnDef.textContent = `🛡️ Defender Won (+8 pts / -8 pts)`;
           btnDef.onclick = () => {
             const victim = state.teams[chosenVictimIdx];
-            victim.score += 8;
-            myTeam.score -= 8;
-            myTeam.sips += 4;
-            addLog(`🛡️ CHUG CHALLENGE: Defender ${victim.name} won against ${myTeam.name}! (+8 pts / -8 pts).`);
-            saveGameState(true);
-            renderCrewBar();
-            renderScoringTab();
+            applyScoreDelta(state.myTeamIdx, -8, 4, `🛡️ CHUG CHALLENGE: Defender ${victim.name} won against ${myTeam.name}! (+8 pts / -8 pts).`, {
+              attackerTeamIdx: chosenVictimIdx,
+              attackerScoreDelta: 8
+            });
             document.getElementById("outcomeModal").classList.remove("open");
           };
           actionsBox.appendChild(btnAtk);
@@ -10219,11 +10481,9 @@
           btnFreeze.textContent = `❄️ Freeze Target Team Until Next Turn`;
           btnFreeze.onclick = () => {
             const victim = state.teams[chosenVictimIdx];
-            victim.frozen = true;
-            addLog(`❄️ DRINKER'S FREEZE: ${myTeam.name} froze ${victim.name} until next turn!`);
-            saveGameState(true);
-            renderCrewBar();
-            renderScoringTab();
+            applyScoreDelta(chosenVictimIdx, 0, 0, `❄️ DRINKER'S FREEZE: ${myTeam.name} froze ${victim.name} until next turn!`, {
+              setFrozen: true
+            });
             document.getElementById("outcomeModal").classList.remove("open");
           };
           actionsBox.appendChild(btnFreeze);
@@ -10237,8 +10497,10 @@
           btnSwap.textContent = `🔄 Confirm Drink Swap`;
           btnSwap.onclick = () => {
             const victim = state.teams[chosenVictimIdx];
-            addLog(`🔄 DRINK SWAP: ${myTeam.name} swapped drinks with ${victim.name}!`);
-            saveGameState(true);
+            const msg = `🔄 DRINK SWAP: ${myTeam.name} swapped drinks with ${victim.name}!`;
+            addLog(msg);
+            broadcastRoomEvent({ action: "ROOM_LOG", logMsg: msg });
+            debounceSaveGameState(600);
             document.getElementById("outcomeModal").classList.remove("open");
           };
           actionsBox.appendChild(btnSwap);
@@ -10252,11 +10514,7 @@
           btnShot.textContent = `🥃 Nominate Mystery Drink (+2 sips)`;
           btnShot.onclick = () => {
             const victim = state.teams[chosenVictimIdx];
-            victim.sips += 2;
-            addLog(`🥃 SHOT ROULETTE: ${myTeam.name} nominated ${victim.name} for mystery drink! (+2 sips).`);
-            saveGameState(true);
-            renderCrewBar();
-            renderScoringTab();
+            applyScoreDelta(chosenVictimIdx, 0, 2, `🥃 SHOT ROULETTE: ${myTeam.name} nominated ${victim.name} for mystery drink! (+2 sips).`);
             document.getElementById("outcomeModal").classList.remove("open");
           };
           actionsBox.appendChild(btnShot);
@@ -10271,12 +10529,11 @@
           btnHeist.textContent = `🃏 Steal 1 Wild Card (From Rival)`;
           btnHeist.onclick = () => {
             const victim = state.teams[chosenVictimIdx];
-            if (victim.stash > 0) victim.stash = Math.max(0, victim.stash - 1);
-            if (myTeam.stash < 2) myTeam.stash += 1;
-            addLog(`🃏 WILD HEIST: ${myTeam.name} forcefully stole 1 Wild card from ${victim.name}!`);
-            saveGameState(true);
-            renderCrewBar();
-            renderScoringTab();
+            applyScoreDelta(chosenVictimIdx, 0, 0, `🃏 WILD HEIST: ${myTeam.name} forcefully stole 1 Wild card from ${victim.name}!`, {
+              stashDelta: victim.stash > 0 ? -1 : 0,
+              attackerTeamIdx: state.myTeamIdx,
+              attackerStashDelta: (myTeam.stash < 2 && victim.stash > 0) ? 1 : 0
+            });
             document.getElementById("outcomeModal").classList.remove("open");
           };
           actionsBox.appendChild(btnHeist);
@@ -10291,13 +10548,10 @@
           btnUpgrade.textContent = `💥 Unleash Wild +4 Upgrade (+4 pts)`;
           btnUpgrade.onclick = () => {
             const victim = state.teams[chosenVictimIdx];
-            myTeam.score += 4;
-            victim.score -= 4;
-            victim.sips += 4;
-            addLog(`💥 +4 UPGRADE: ${myTeam.name}'s Wild upgraded to a Wild +4 against ${victim.name}! (+4 pts to ${myTeam.name}, rival team downs drink / shot).`);
-            saveGameState(true);
-            renderCrewBar();
-            renderScoringTab();
+            applyScoreDelta(chosenVictimIdx, -4, 4, `💥 +4 UPGRADE: ${myTeam.name}'s Wild upgraded to a Wild +4 against ${victim.name}! (+4 pts to ${myTeam.name}, rival team downs drink / shot).`, {
+              attackerTeamIdx: state.myTeamIdx,
+              attackerScoreDelta: 4
+            });
             document.getElementById("outcomeModal").classList.remove("open");
           };
           actionsBox.appendChild(btnUpgrade);
@@ -10315,10 +10569,17 @@
               if (i !== state.myTeamIdx) t.sips += 3;
               else t.sips += 1;
             });
-            addLog(`🌊 WATERFALL: ${myTeam.name} triggered a Ring of Fire Waterfall chain across all teams!`);
-            saveGameState(true);
+            const msg = `🌊 WATERFALL: ${myTeam.name} triggered a Ring of Fire Waterfall chain across all teams!`;
+            addLog(msg);
+            recalculateTeamCrowns();
             renderCrewBar();
             renderScoringTab();
+            broadcastRoomEvent({
+              action: "WATERFALL_SIP",
+              myTeamIdx: state.myTeamIdx,
+              logMsg: msg
+            });
+            debounceSaveGameState(600);
             document.getElementById("outcomeModal").classList.remove("open");
           };
           actionsBox.appendChild(btnWaterfall);
@@ -10596,18 +10857,30 @@
         }
 
         const cardName = selectedBingoCard.title; // Always show real title in logs
-        if (isBonus) {
-          addLog(`⭐ BINGO BONUS: ${target.name} scored ${selectedBingoCard.icon} "${cardName}" (+${points} pts)!`);
-        } else {
-          addLog(`🎯 BINGO PENALTY: ${selectedBingoCard.icon} "${cardName}" struck ${target.name} (${points} pts)!`);
-        }
+        const logMsg = isBonus
+          ? `⭐ BINGO BONUS: ${target.name} scored ${selectedBingoCard.icon} "${cardName}" (+${points} pts)!`
+          : `🎯 BINGO PENALTY: ${selectedBingoCard.icon} "${cardName}" struck ${target.name} (${points} pts)!`;
+        addLog(logMsg);
 
+        recalculateTeamCrowns();
         playFanfare("win");
         spawnCoins(isBonus ? 45 : 25);
-        saveGameState(true);
         renderCrewBar();
         renderScoringTab();
         renderBingoGrid();
+
+        // Broadcast lightweight bingo claim delta (<50ms delivery)
+        broadcastRoomEvent({
+          action: "BINGO_CLAIM",
+          cardId: selectedBingoCard.id,
+          targetTeamIdx: selectedBingoTargetTeamIdx,
+          pts: points,
+          claimCount: selectedBingoCard.claimCount,
+          claimedBy: selectedBingoCard.claimedBy,
+          logMsg: logMsg
+        });
+
+        debounceSaveGameState(600);
         document.getElementById("bingoTargetModal").classList.remove("open");
       };
 
@@ -11809,6 +12082,27 @@
           triggerHaptic([50, 80]);
           document.getElementById("adminCustomMsgModal")?.classList.remove("open");
           showToast(`💬 Alert sent to ${activeMsgTargetName}`);
+        };
+      }
+
+      const adminForceBroadcastBtn = document.getElementById("adminForceBroadcastBtn");
+      if (adminForceBroadcastBtn) {
+        adminForceBroadcastBtn.onclick = () => {
+          if (!roomCode) {
+            showToast("⚠️ No room connected.");
+            return;
+          }
+          state.senderId = getOrCreateDeviceId();
+          state.updatedAt = Date.now();
+          state.version = (state.version || 0) + 1;
+          broadcastRoomEvent({
+            action: "FORCE_STATE_OVERRIDE",
+            stateSnapshot: state
+          });
+          saveGameState(true);
+          playFanfare("win");
+          spawnCoins(35);
+          showToast("⚡ Authoritative Scores Broadcast to All Room Devices!");
         };
       }
 
